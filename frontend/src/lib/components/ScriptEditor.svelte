@@ -295,8 +295,8 @@
 								{path}
 								{lang}
 								{previewJob}
-								{pastPreviews}
 								{previewIsLoading}
+								bind:pastPreviews
 								bind:lastSave
 							/>
 						</div>
