@@ -22,7 +22,13 @@
 	})
 </script>
 
-<div class="border-b border-gray-200 flex flex-row mb-4">
-	<slot />
+<div class="border-b border-gray-200 flex mb-4 justify-between items-center">
+	<div class="flex">
+		<slot />
+	</div>
+
+	<div>
+		<slot name="actions" />
+	</div>
 </div>
 <slot name="content" />

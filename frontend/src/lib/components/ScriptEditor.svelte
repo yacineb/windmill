@@ -3,12 +3,7 @@
 	import { CompletedJob, Job, JobService } from '$lib/gen'
 	import { userStore, workspaceStore } from '$lib/stores'
 	import { classNames, emptySchema } from '$lib/utils'
-	import {
-		faCheck,
-		faExclamationTriangle,
-		faPlay,
-		faRotateRight
-	} from '@fortawesome/free-solid-svg-icons'
+	import { faPlay, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 	import { onDestroy, onMount } from 'svelte'
 	import Icon from 'svelte-awesome'
 	import Editor from './Editor.svelte'
@@ -17,11 +12,11 @@
 
 	import type { Preview } from '$lib/gen/models/Preview'
 
-	import SchemaForm from './SchemaForm.svelte'
 	import LogPanel from './script_editor/LogPanel.svelte'
 	import { HSplitPane, VSplitPane } from 'svelte-split-pane'
 	import { faGithub } from '@fortawesome/free-brands-svg-icons'
 	import EditorBar from './EditorBar.svelte'
+	import InputPanel from './script_editor/InputPanel.svelte'
 
 	// Exported
 	export let schema: Schema = emptySchema()
@@ -36,7 +31,6 @@
 
 	// Preview args input
 	let args: Record<string, any> = {}
-	let isValid: boolean = true
 
 	// Preview
 	let previewIsLoading = false
@@ -134,9 +128,9 @@
 
 	async function inferSchema() {
 		let isDefault: string[] = []
-		Object.entries(args).forEach(([k, v]) => {
-			if (schema.properties[k].default == v) {
-				isDefault.push(k)
+		Object.entries(args).forEach(([argName, argValue]) => {
+			if (schema.properties[argName].default == argValue) {
+				isDefault.push(argName)
 			}
 		})
 		await inferArgs(lang, editor.getCode(), schema)
@@ -226,68 +220,41 @@
 <div class="flex-1 overflow-auto">
 	<HSplitPane leftPaneSize="60%" rightPaneSize="40%" minLeftPaneSize="50px" minRightPaneSize="50px">
 		<left slot="left">
-			<div class="h-full">
-				<div
-					class="p-2 h-full"
-					on:mouseleave={() => {
+			<div
+				class="h-full"
+				on:mouseleave={() => {
+					code = getEditor().getCode()
+					inferSchema()
+				}}
+			>
+				<Editor
+					{code}
+					bind:websocketAlive
+					bind:this={editor}
+					cmdEnterAction={() => {
+						runPreview()
+					}}
+					on:blur={() => {
 						code = getEditor().getCode()
 						inferSchema()
 					}}
-				>
-					<Editor
-						{code}
-						bind:websocketAlive
-						bind:this={editor}
-						cmdEnterAction={() => {
-							runPreview()
-						}}
-						formatAction={async () => {
-							code = getEditor().getCode()
-							await inferSchema()
-							localStorage.setItem(path ?? 'last_save', code)
-							lastSave = code
-						}}
-						on:blur={() => {
-							code = getEditor().getCode()
-							inferSchema()
-						}}
-						class="flex flex-1 h-full"
-						deno={lang == 'deno'}
-						automaticLayout={true}
-					/>
-				</div>
+					formatAction={async () => {
+						code = getEditor().getCode()
+						await inferSchema()
+						localStorage.setItem(path ?? 'last_save', code)
+						lastSave = code
+					}}
+					class="flex flex-1 h-full"
+					deno={lang == 'deno'}
+					automaticLayout={true}
+				/>
 			</div>
 		</left>
 		<right slot="right">
 			<div class="h-full">
 				<VSplitPane topPanelSize="50%" downPanelSize="50%">
 					<top slot="top">
-						<div class="h-full overflow-auto">
-							<div class="p-4">
-								<div class="break-all relative font-sans">
-									<div class="items-baseline text-xs text-gray-700 italic hidden md:block">
-										<p>
-											Move the focus outside of the text editor to recompute the input schema from
-											main signature or press Ctrl/Cmd+S
-										</p>
-										<p class="mt-4">
-											{#if isValid}
-												<Icon data={faCheck} class="text-green-600 mr-1" scale={0.6} />
-												The current preview input matches requirements defined in arguments
-											{:else}
-												<Icon
-													data={faExclamationTriangle}
-													class="text-yellow-500 mr-1"
-													scale={0.6}
-												/>
-												The current preview input doesn't match requirements defined in arguments
-											{/if}
-										</p>
-									</div>
-									<SchemaForm {schema} bind:args bind:isValid />
-								</div>
-							</div>
-						</div>
+						<InputPanel bind:args {schema} />
 					</top>
 					<down slot="down">
 						<div class="pt-1 h-full overflow-auto">

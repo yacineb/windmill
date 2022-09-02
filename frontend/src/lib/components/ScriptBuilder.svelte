@@ -11,8 +11,13 @@
 		POSTGRES_INIT_CODE
 	} from '$lib/script_helpers'
 	import { workspaceStore } from '$lib/stores'
-	import { emptySchema, encodeState, sendUserToast, setQueryWithoutLoad } from '$lib/utils'
-	import { Breadcrumb, BreadcrumbItem } from 'flowbite-svelte'
+	import {
+		classNames,
+		emptySchema,
+		encodeState,
+		sendUserToast,
+		setQueryWithoutLoad
+	} from '$lib/utils'
 	import { onDestroy } from 'svelte'
 	import SvelteMarkdown from 'svelte-markdown'
 	import Path from './Path.svelte'
@@ -21,6 +26,17 @@
 	import ScriptEditor from './ScriptEditor.svelte'
 	import ScriptSchema from './ScriptSchema.svelte'
 	import CenteredPage from './CenteredPage.svelte'
+	import Icon from 'svelte-awesome'
+	import {
+		faArrowRight,
+		faCaretSquareDown,
+		faCode,
+		faDownload,
+		faEdit,
+		faRecordVinyl,
+		faSave,
+		faSliders
+	} from '@fortawesome/free-solid-svg-icons'
 
 	let editor: ScriptEditor
 	let scriptSchema: ScriptSchema
@@ -101,102 +117,73 @@
 	onDestroy(() => {
 		editor?.$destroy()
 	})
+
+	const menuBarItems = [
+		{
+			label: 'Metadata',
+			icon: faSliders
+		},
+		{ label: 'Code Editor', icon: faCode },
+		{ label: 'UI Customisation', icon: faEdit }
+	]
 </script>
 
 <div class="flex flex-col h-screen">
 	<!-- Nav between steps-->
-	<div class="flex flex-col w-full px-4 py-1 border-b shadow-sm bg-gray-900">
+	<div class="flex flex-col w-full border-b shadow-sm bg-gray-100">
 		<div class="justify-between flex flex-row drop-shadow-sm w-full">
-			<nav class="flex text-white  " aria-label="Breadcrumb">
-				<ol class="inline-flex items-center space-x-1 md:space-x-3">
-					<li class="inline-flex items-center">
-						<a href="#" class="inline-flex items-center text-xs font-medium text-white ">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								class="w-6 h-6"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"
-								/>
-							</svg>
+			<nav>
+				<ol class="flex items-center h-full">
+					{#each menuBarItems as item, index}
+						<button
+							type="button"
+							on:click={() => changeStep(index + 1)}
+							class={classNames(
+								'flex items-center text-sm font-medium px-4 py-2 transition-colors h-full text-gray-900',
+								index + 1 === step ? 'bg-gray-300' : 'hover:bg-gray-200'
+							)}
+						>
+							<Icon data={item.icon} class="h-4 w-4 mr-2" />
 
-							Metadata
-						</a>
-					</li>
-					<li>
-						<div class="flex items-center ">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="1.5"
-								stroke="currentColor"
-								class="w-6 h-6"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-								/>
-							</svg>
-
-							<a href="#" class="ml-1 text-xs font-medium text-white md:ml-2">Code Editor</a>
-						</div>
-					</li>
-					<li aria-current="page">
-						<div class="flex items-center">
-							<span
-								class="ml-1 text-xs font-medium text-gray-900 md:ml-2 flex items-center bg-slate-200 p-1 rounded-md"
-							>
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke-width="1.5"
-									stroke="currentColor"
-									class="w-6 h-6 mr-2"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10"
-									/>
-								</svg>
-								UI Customisation
-							</span>
-						</div>
-					</li>
+							{item.label}
+						</button>
+					{/each}
 				</ol>
 			</nav>
-			<div class="flex flex-row-reverse ml-2">
+
+			<div class="flex flex-row-reverse my-1 mr-4 space-x-2  space-x-reverse">
 				{#if step != 3}
 					<button
 						disabled={step == 1 && pathError != ''}
-						class="default-button px-6 max-h-8"
+						class="bg-blue-500 hover:bg-blue-700 rounded-md flex justify-center items-center text-white p-2 text-sm"
 						on:click={() => {
 							changeStep(step + 1)
 						}}
 					>
 						Next
+						<Icon data={faArrowRight} class="ml-2 w-4 h-4" />
 					</button>
 				{:else}
-					<button class="default-button px-6 self-end" on:click={editScript}>Save</button>
+					<button
+						class="bg-blue-500 hover:bg-blue-700 rounded-md flex justify-center items-center text-white p-2 text-sm"
+						on:click={editScript}
+					>
+						<Icon data={faDownload} class="mr-2 w-4 h-4" />
+
+						Save
+					</button>
 				{/if}
 
 				{#if step == 2}
 					<button
-						class="default-button-secondary px-6 max-h-8 mr-2"
+						class="bg-blue-500 hover:bg-blue-700 rounded-md flex justify-center items-center text-white p-2 text-sm"
 						on:click={async () => {
 							await inferSchema()
 							editScript()
 						}}
 					>
+						<Icon data={faDownload} class="mr-2 w-4 h-4" />
+
 						Save (commit)
 					</button>
 				{/if}
@@ -236,7 +223,7 @@
 					/>
 				</div>
 				{#if script.language == 'deno'}
-					<h4 class="text-gray-700  border-b">Template</h4>
+					<h4 class="text-gray-700 border-b">Template</h4>
 
 					<div class="max-w-md">
 						<RadioButton
@@ -276,15 +263,7 @@
 						<textarea
 							id="inp"
 							bind:value={script.description}
-							class="
-					mt-1
-					block
-					w-full
-					rounded-md
-					border-gray-300
-					shadow-sm
-					focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50
-					"
+							class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
 							placeholder="A description to help users understand what this script does and how to use it."
 							rows="3"
 						/>
