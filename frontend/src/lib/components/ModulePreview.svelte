@@ -72,7 +72,7 @@
 						classes: 'animate-spin'
 					}}
 				>
-					'Cancel'
+					Cancel
 				</Button>
 			{/if}
 		</div>

@@ -205,7 +205,7 @@
 											classes: 'animate-spin'
 										}}
 									>
-										'Cancel'
+										Cancel
 									</Button>
 								{:else}
 									<Button
