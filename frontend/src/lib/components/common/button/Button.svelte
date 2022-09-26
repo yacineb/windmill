@@ -43,7 +43,7 @@
 		}
 	}
 
-	const buttonProps = {
+	$: buttonProps = {
 		class: classNames(
 			getColorClasses(),
 			getSizeClasses(),

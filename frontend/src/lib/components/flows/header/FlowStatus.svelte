@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { classNames } from '$lib/utils'
-	import {
-		faArrowCircleDown,
-		faArrowRotateBack,
-		faArrowRotateForward,
-		faCalendar,
-		faCalendarAlt
-	} from '@fortawesome/free-solid-svg-icons'
+	import { faArrowRotateForward, faCalendarAlt } from '@fortawesome/free-solid-svg-icons'
 	import { getContext } from 'svelte'
 	import Icon from 'svelte-awesome'
 	import { flowStore } from '../flowStore'

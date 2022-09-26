@@ -2,9 +2,9 @@
 	import type { Schema, SchemaProperty } from '$lib/common'
 	import { emptySchema, sendUserToast } from '$lib/utils'
 	import { faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
-	import { Button } from 'flowbite-svelte'
 	import { createEventDispatcher } from 'svelte'
 	import Icon from 'svelte-awesome'
+	import Button from './common/button/Button.svelte'
 	import SchemaEditorProperty from './SchemaEditorProperty.svelte'
 	import type { ModalSchemaProperty } from './SchemaModal.svelte'
 	import SchemaModal, { DEFAULT_PROPERTY, schemaToModal } from './SchemaModal.svelte'
@@ -146,9 +146,9 @@
 				modalProperty = Object.assign({}, DEFAULT_PROPERTY)
 				schemaModal.openModal()
 			}}
-			class="blue-button"
+			size="sm"
+			startIcon={{ icon: faPlus }}
 		>
-			<Icon data={faPlus} class="mr-1" />
 			Add argument
 		</Button>
 
@@ -199,15 +199,16 @@
 									<td class="justify-end flex">
 										<Button
 											color="red"
-											outline
-											class="mr-2"
+											variant="border"
 											size="xs"
 											on:click={() => handleDeleteArgument(name)}
+											startIcon={{
+												icon: faTrash
+											}}
 										>
-											<Icon data={faTrash} class="mr-2" scale={0.8} />
 											Delete
 										</Button>
-										<Button color="alternative" size="xs" on:click={() => startEditArgument(name)}>
+										<Button color="light" size="xs" on:click={() => startEditArgument(name)}>
 											<Icon data={faPen} class="mr-2" scale={0.8} />
 											Edit
 										</Button>

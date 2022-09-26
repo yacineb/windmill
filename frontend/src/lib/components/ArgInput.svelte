@@ -1,16 +1,9 @@
 <script lang="ts">
 	import { slide } from 'svelte/transition'
 
-	import {
-		faArrowRotateLeft,
-		faChevronDown,
-		faChevronUp,
-		faMinus,
-		faPlus
-	} from '@fortawesome/free-solid-svg-icons'
+	import { faChevronDown, faChevronUp, faMinus, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 	import { setInputCat as computeInputCat, type InputCat } from '$lib/utils'
-	import { Button, Tooltip } from 'flowbite-svelte'
 	import { createEventDispatcher } from 'svelte'
 	import Icon from 'svelte-awesome'
 	import FieldHeader from './FieldHeader.svelte'

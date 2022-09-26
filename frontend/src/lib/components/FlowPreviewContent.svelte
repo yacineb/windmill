@@ -2,8 +2,7 @@
 	import { JobService, type Flow } from '$lib/gen'
 	import { workspaceStore } from '$lib/stores'
 
-	import { faClose, faPlay } from '@fortawesome/free-solid-svg-icons'
-	import { Button } from 'flowbite-svelte'
+	import { faClose, faPlay, faRotateRight } from '@fortawesome/free-solid-svg-icons'
 	import { createEventDispatcher, getContext, onDestroy } from 'svelte'
 	import Icon from 'svelte-awesome'
 	import { flowStateStore } from './flows/flowState'
@@ -14,6 +13,7 @@
 	import SchemaForm from './SchemaForm.svelte'
 
 	import FlowStatusViewer from '../components/FlowStatusViewer.svelte'
+	import Button from './common/button/Button.svelte'
 	export let previewMode: 'upTo' | 'whole'
 
 	let jobId: string | undefined = undefined
@@ -72,7 +72,7 @@
 			</h3>
 		</div>
 		<Button
-			color="alternative"
+			color="light"
 			on:click={() => {
 				jobId = undefined
 				intervalState = 'idle'
@@ -82,8 +82,8 @@
 			<Icon data={faClose} />
 		</Button>
 	</div>
-	<div class="pb-4 h-full max-h-1/2 overflow-auto">
-		<div class="mt-4">
+	<div class="flex flex-col flex-1 h-full max-h-1/2">
+		<div class="mt-4 overflow-y-scroll">
 			<SchemaForm schema={$flowStore.schema} bind:isValid bind:args={$previewArgs} />
 		</div>
 	</div>
@@ -103,17 +103,16 @@
 				} catch {}
 				jobId = undefined
 			}}
-			size="md"
+			startIcon={{
+				icon: faRotateRight,
+				classes: 'animate-spin'
+			}}
+			size="sm"
 		>
 			Cancel
 		</Button>
 	{:else}
-		<Button
-			disabled={!isValid}
-			class="blue-button"
-			on:click={() => runPreview($previewArgs)}
-			size="md"
-		>
+		<Button disabled={!isValid} on:click={() => runPreview($previewArgs)} size="sm">
 			{`Run${intervalState === 'done' ? ' again' : ''}`}
 		</Button>
 	{/if}
