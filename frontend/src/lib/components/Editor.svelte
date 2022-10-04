@@ -39,6 +39,7 @@
 		langToExt,
 		updateOptions
 	} from '$lib/editorUtils'
+	import { dirtyStore } from './common/confirmationModal/dirtyStore'
 
 	try {
 		StandaloneServices.initialize({
@@ -366,6 +367,8 @@
 
 		let timeoutModel: NodeJS.Timeout | undefined = undefined
 		editor.onDidChangeModelContent((event) => {
+			$dirtyStore = true
+
 			timeoutModel && clearTimeout(timeoutModel)
 			timeoutModel = setTimeout(() => {
 				code = getCode()
@@ -441,10 +444,6 @@
 		websocketInterval && clearInterval(websocketInterval)
 	})
 </script>
-
-<!-- <button class="default-button px-6 max-h-8" type="button" on:click={format}>
-	Format (CtrlCmd + S)
-</button> -->
 
 <div bind:this={divEl} class={$$props.class} />
 
