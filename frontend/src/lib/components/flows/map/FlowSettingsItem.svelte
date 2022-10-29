@@ -8,10 +8,8 @@
 	const { select, selectedId, schedule } = getContext<FlowEditorContext>('FlowEditorContext')
 
 	$: settingsClass = classNames(
-		'border w-full rounded-sm p-2 bg-white text-xs cursor-pointer flex items-center mb-4 ',
-		$selectedId === 'settings'
-			? 'outline outline-offset-1 outline-2 outline-indigo-800 bg-indigo-100'
-			: undefined
+		'border w-full rounded-md p-2 bg-white text-sm cursor-pointer flex items-center mb-4 sticky top-0 z-20',
+		$selectedId === 'settings' ? 'outline outline-offset-1 outline-2  outline-slate-900' : ''
 	)
 </script>
 

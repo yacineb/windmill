@@ -21,7 +21,7 @@
 				schema: emptySchema(),
 				previewResult: NEVER_TESTED_THIS_FAR
 			}
-			$flowStateStore.failureModule = failureModule
+			$flowStateStore['failure'] = failureModule
 			$flowStore.value.failure_module = {
 				id: 'failure',
 				value: { type: 'identity' }
@@ -41,7 +41,7 @@
 		}
 	}}
 	class={classNames(
-		'border rounded-md p-2 bg-white text-sm cursor-pointer mt-4 flex flex-col overflow-x-hidden',
+		'border rounded-md p-2 bg-white text-sm cursor-pointer mt-4 flex flex-col overflow-x-hidden  bottom-0 z-20 sticky',
 		$selectedId.includes('failure') ? 'outline outline-offset-1 outline-2 outline-slate-900' : ''
 	)}
 >

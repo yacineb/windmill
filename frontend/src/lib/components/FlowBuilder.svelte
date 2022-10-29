@@ -12,8 +12,6 @@
 	} from '$lib/utils'
 	import { faGlobe, faPen, faSave } from '@fortawesome/free-solid-svg-icons'
 	import { setContext } from 'svelte'
-	import Icon from 'svelte-awesome'
-	import { lifeBouy, lightbulbO } from 'svelte-awesome/icons'
 	import { writable } from 'svelte/store'
 	import CenteredPage from './CenteredPage.svelte'
 	import { Button } from './common'
@@ -25,6 +23,7 @@
 	import { flowStateStore } from './flows/flowState'
 	import { flowStore } from './flows/flowStore'
 	import FlowImportExportMenu from './flows/header/FlowImportExportMenu.svelte'
+	import FlowPreviewButtons from './flows/header/FlowPreviewButtons.svelte'
 	import { loadFlowSchedule, type Schedule } from './flows/scheduleUtils'
 	import type { FlowEditorContext } from './flows/types'
 	import { cleanInputs } from './flows/utils'
@@ -164,29 +163,8 @@
 
 <div class="flex flex-col flex-1 h-full">
 	<!-- Nav between steps-->
-	<div class="flex flex-row justify-between w-full py-2 h-12 px-4">
-		<div id="flow_title" class="flex gap-2 items-center justify-center">
-			<Button color="light" endIcon={{ icon: faPen }} size="xs" on:click={() => select('settings')}>
-				{$flowStore.path}
-			</Button>
-			<Button color="light" endIcon={{ icon: faPen }} size="xs" on:click={() => select('settings')}>
-				{$flowStore.summary == '' || !$flowStore.summary ? 'No summary' : $flowStore.summary}
-			</Button>
-		</div>
-
-		<div class="flex flex-row-reverse ml-2 space-x-reverse space-x-2 items-center">
-			<Button
-				disabled={pathError != ''}
-				color="dark"
-				size="xs"
-				spacingSize="sm"
-				on:click={saveFlow}
-				startIcon={{ icon: faSave }}
-			>
-				Save
-			</Button>
-			<FlowImportExportMenu />
-
+	<div class="justify-between flex flex-row w-full py-2 px-4 space-x-4">
+		<div class="flex flex-row space-x-2">
 			<Button
 				color="light"
 				size="xs"
@@ -203,10 +181,44 @@
 					url.searchParams.append('flow', btoa(JSON.stringify(openFlow)))
 					window.open(url, '_blank')?.focus()
 				}}
+				startIcon={{ icon: faGlobe }}
 			>
-				<Icon data={faGlobe} scale={0.8} class="inline mr-2" />
 				Publish to Hub
 			</Button>
+			<FlowImportExportMenu />
+		</div>
+		<div class="gap-1 flex-row hidden md:flex shrink overflow-hidden">
+			<Button
+				btnClasses="hidden lg:inline-flex"
+				startIcon={{ icon: faPen }}
+				variant="contained"
+				color="light"
+				size="xs"
+				on:click={async () => {
+					select('settings')
+					document.getElementById('path')?.focus()
+				}}
+			>
+				{$flowStore.path}
+			</Button>
+			<Button
+				startIcon={{ icon: faPen }}
+				variant="contained"
+				color="light"
+				size="xs"
+				on:click={async () => {
+					select('settings')
+					document.getElementById('flow-summary')?.focus()
+				}}
+			>
+				<div class="max-w-[10em] !truncate">
+					{$flowStore.summary == '' || !$flowStore.summary ? 'No summary' : $flowStore.summary}
+				</div>
+			</Button>
+		</div>
+		<div class="flex flex-row-reverse ml-2 space-x-reverse space-x-2">
+			<Button disabled={pathError != ''} size="sm" on:click={saveFlow}>Save</Button>
+			<FlowPreviewButtons />
 		</div>
 	</div>
 
