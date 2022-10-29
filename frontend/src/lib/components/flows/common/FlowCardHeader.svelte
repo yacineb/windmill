@@ -17,14 +17,14 @@
 	}
 </script>
 
-<div class="flex items-center justify-between py-2 px-4 border-b space-x-2 h-12 flex-nowrap">
+<div class="flex items-center justify-between py-2 px-4 border-b gap-2 flex-nowrap h-12">
 	{#if flowModule}
 		<span class="text-sm w-full">
 			<div class="flex items-center space-x-2">
 				{#if shouldPick}
 					<span class="font-bold text-xs">Select a step kind</span>
 				{:else if flowModule?.value.type === 'rawscript'}
-					<Badge color={languageColors[flowModule?.value.language] ?? 'gray'} capitalize>
+					<Badge color={languageColors[flowModule?.value.language] ?? 'gray'} capitalize large>
 						{flowModule?.value.language}
 					</Badge>
 					<input bind:value={flowModule.summary} placeholder={'Summary'} />

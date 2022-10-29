@@ -8,15 +8,17 @@
 	const { select, selectedId, schedule } = getContext<FlowEditorContext>('FlowEditorContext')
 
 	$: settingsClass = classNames(
-		'border w-full rounded-md p-2 bg-white text-sm cursor-pointer flex items-center mb-4',
-		$selectedId === 'settings' ? 'outline outline-offset-1 outline-2  outline-slate-900' : ''
+		'border w-full rounded-sm p-2 bg-white text-xs cursor-pointer flex items-center mb-4 ',
+		$selectedId === 'settings'
+			? 'outline outline-offset-1 outline-2 outline-indigo-800 bg-indigo-100'
+			: undefined
 	)
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <div on:click={() => select('settings')} class={settingsClass}>
 	<Icon data={faSliders} class="mr-2" />
-	<span class="text-xs font-bold flex flex-row justify-between w-full flex-wrap gap-2 items-center">
+	<span class="flex flex-row justify-between w-full flex-wrap gap-2 items-center">
 		Settings
 		<span
 			class={classNames('badge', $schedule?.enabled ? 'badge-on' : 'badge-off')}

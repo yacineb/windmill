@@ -10,12 +10,14 @@
 		sendUserToast,
 		setQueryWithoutLoad
 	} from '$lib/utils'
-	import { faGlobe, faPen } from '@fortawesome/free-solid-svg-icons'
+	import { faGlobe, faPen, faSave } from '@fortawesome/free-solid-svg-icons'
 	import { setContext } from 'svelte'
 	import Icon from 'svelte-awesome'
+	import { lifeBouy, lightbulbO } from 'svelte-awesome/icons'
 	import { writable } from 'svelte/store'
 	import CenteredPage from './CenteredPage.svelte'
 	import { Button } from './common'
+	import Badge from './common/badge/Badge.svelte'
 	import { dirtyStore } from './common/confirmationModal/dirtyStore'
 	import UnsavedConfirmationModal from './common/confirmationModal/UnsavedConfirmationModal.svelte'
 	import { OFFSET } from './CronInput.svelte'
@@ -162,44 +164,33 @@
 
 <div class="flex flex-col flex-1 h-full">
 	<!-- Nav between steps-->
-	<div
-		class="justify-between flex flex-row w-full my-2 px-4 space-x-4 h-10 overflow-x-auto scrollbar-hidden"
-	>
-		<div id="flow_title" class="flex justify-between items-center">
-			<button class="flex flex-row items-center w-full h-full" on:click={() => select('settings')}>
-				<span class="font-mono text-sm"> {$flowStore.path}</span>
-				<Icon
-					data={faPen}
-					scale={0.8}
-					class="text-gray-500 ml-2 flex justify-center items-center mb-0.5"
-				/>
-			</button>
+	<div class="flex flex-row justify-between w-full py-2 h-12 px-4">
+		<div id="flow_title" class="flex gap-2 items-center justify-center">
+			<Button color="light" endIcon={{ icon: faPen }} size="xs" on:click={() => select('settings')}>
+				{$flowStore.path}
+			</Button>
+			<Button color="light" endIcon={{ icon: faPen }} size="xs" on:click={() => select('settings')}>
+				{$flowStore.summary == '' || !$flowStore.summary ? 'No summary' : $flowStore.summary}
+			</Button>
 		</div>
-		<div class="shrink h-full">
-			<button
-				class="flex flex-row items-center w-full h-full"
-				on:click={() => {
-					select('settings')
-					document.getElementById('flow-summary')?.focus()
-				}}
+
+		<div class="flex flex-row-reverse ml-2 space-x-reverse space-x-2 items-center">
+			<Button
+				disabled={pathError != ''}
+				color="dark"
+				size="xs"
+				spacingSize="sm"
+				on:click={saveFlow}
+				startIcon={{ icon: faSave }}
 			>
-				<div class="overflow-x-auto flex items-center h-full text-sm text-left font-semibold">
-					<div>
-						{$flowStore.summary == '' || !$flowStore.summary ? 'No summary' : $flowStore.summary}
-					</div>
-				</div>
-				<div>
-					<Icon data={faPen} scale={0.8} class="text-gray-500 ml-1" />
-				</div>
-			</button>
-		</div>
-		<div class="flex flex-row-reverse ml-2 space-x-reverse space-x-2">
-			<Button disabled={pathError != ''} color="blue" size="sm" on:click={saveFlow}>Save</Button>
+				Save
+			</Button>
 			<FlowImportExportMenu />
 
 			<Button
 				color="light"
-				size="sm"
+				size="xs"
+				spacingSize="sm"
 				variant="border"
 				on:click={() => {
 					const url = new URL('https://hub.windmill.dev/flows/add')

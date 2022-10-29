@@ -12,7 +12,6 @@
 	import Toggle from '$lib/components/Toggle.svelte'
 
 	export let initialPath: string
-
 	export let defaultTab = 'metadata'
 </script>
 

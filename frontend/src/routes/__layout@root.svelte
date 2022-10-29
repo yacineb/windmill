@@ -99,8 +99,8 @@
 				isCollapsed ? 'md:w-12' : 'md:w-48'
 			)}
 		>
-			<div class="flex-1 flex flex-col min-h-0 shadow-lg bg-blue-500">
-				<div class="flex items-center flex-shrink-0 p-4 font-extrabold text-white">
+			<div class="flex-1 flex flex-col shadow-lg bg-blue-500">
+				<div class="flex items-center flex-shrink-0 p-4 font-extrabold text-white h-12">
 					{#if isCollapsed}
 						W
 					{:else}

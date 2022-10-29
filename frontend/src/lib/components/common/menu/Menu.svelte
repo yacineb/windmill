@@ -48,7 +48,7 @@
 
 <div class="relative" bind:this={menu}>
 	<div>
-		<div on:click={() => (show = !show)} on:click>
+		<div on:click|stopPropagation={() => (show = !show)}>
 			<slot name="trigger" />
 		</div>
 

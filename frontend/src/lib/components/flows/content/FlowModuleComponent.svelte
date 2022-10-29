@@ -161,20 +161,23 @@
 					</Pane>
 					<Pane size={50} minSize={20}>
 						<Tabs bind:selected>
-							<Tab value="inputs"
-								><Tooltip>
-									Move the focus outside of the text editor to recompute the inputs or press
-									<Kbd>Ctrl/Cmd</Kbd> + <Kbd>S</Kbd>
-								</Tooltip>Inputs</Tab
-							>
-							<Tab value="test">Test</Tab>
-							<Tab value="retries">Retries</Tab>
+							<Tab value="inputs" class="!text-xs">
+								<div class="flex justify-center gap-2 items-center">
+									<Tooltip>
+										Move the focus outside of the text editor to recompute the inputs or press
+										<Kbd>Ctrl/Cmd</Kbd> + <Kbd>S</Kbd>
+									</Tooltip>
+									Inputs
+								</div>
+							</Tab>
+							<Tab value="test" class="!text-xs">Test</Tab>
+							<Tab value="retries" class="!text-xs">Retries</Tab>
 							{#if !$selectedId.includes('failure')}
-								<Tab value="early-stop">Early Stop</Tab>
-								<Tab value="suspend">Sleep/Suspend</Tab>
+								<Tab value="early-stop" class="!text-xs">Early Stop</Tab>
+								<Tab value="suspend" class="!text-xs">Sleep/Suspend</Tab>
 							{/if}
 						</Tabs>
-						<div class="h-[calc(100%-32px)]">
+						<div class="h-[calc(100%-35px)]">
 							{#if selected === 'inputs'}
 								<div class="h-full overflow-auto">
 									<PropPickerWrapper
