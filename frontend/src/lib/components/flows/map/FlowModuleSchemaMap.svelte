@@ -11,6 +11,7 @@
 	import FlowSettingsItem from './FlowSettingsItem.svelte'
 	import FlowInputsItem from './FlowInputsItem.svelte'
 	import InsertModuleButton from './InsertModuleButton.svelte'
+	import { classNames } from '$lib/utils'
 
 	export let root: boolean = false
 	export let color: 'blue' | 'orange' | 'indigo' = 'blue'
@@ -73,35 +74,43 @@
 	$: confirmationModalOpen = indexToRemove !== undefined
 </script>
 
-<div class="flex flex-col justify-between w-full">
-	<ul class="w-full">
-		{#if root}
-			<FlowSettingsItem />
-			<FlowInputsItem />
-		{/if}
-
-		{#each modules as mod, index (mod.id ?? index)}
-			<MapItem
-				{color}
-				{index}
-				bind:mod
-				on:delete={(event) => {
-					if (event.detail.detail.shiftKey || isEmptyFlowModule(mod)) {
-						removeAtIndex(index)
-					} else {
-						indexToRemove = index
-					}
-				}}
-				on:insert={() => {
-					insertNewModuleAtIndex(index)
-				}}
-			/>
-		{/each}
-
-		<InsertModuleButton on:click={() => insertNewModuleAtIndex(modules.length)} />
-	</ul>
+<div class="flex flex-col h-full">
 	{#if root}
-		<FlowErrorHandlerItem />
+		<div class="flex-initial p-4 border-b">
+			<FlowSettingsItem />
+		</div>
+	{/if}
+	<div class="flex-auto relative overflow-y-auto overflow-x-hidden">
+		<ul class={classNames(root ? 'p-4' : '')}>
+			{#if root}
+				<li>
+					<FlowInputsItem />
+				</li>
+			{/if}
+			{#each modules as mod, index (mod.id ?? index)}
+				<MapItem
+					{color}
+					{index}
+					bind:mod
+					on:delete={(event) => {
+						if (event.detail.detail.shiftKey || isEmptyFlowModule(mod)) {
+							removeAtIndex(index)
+						} else {
+							indexToRemove = index
+						}
+					}}
+					on:insert={() => {
+						insertNewModuleAtIndex(index)
+					}}
+				/>
+			{/each}
+			<InsertModuleButton on:click={() => insertNewModuleAtIndex(modules.length)} />
+		</ul>
+	</div>
+	{#if root}
+		<div class="flex-none px-4 pb-4 border-t">
+			<FlowErrorHandlerItem />
+		</div>
 	{/if}
 </div>
 

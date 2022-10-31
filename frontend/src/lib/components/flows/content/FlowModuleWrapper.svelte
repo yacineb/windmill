@@ -49,22 +49,25 @@
 			{parentModule}
 		/>
 	{:else if flowModule.value.type === 'identity'}
-		{#if $selectedId == 'failure'}
-			<Alert type="info" title="Error handlers are triggered upon non recovered errors">
-				If defined, the error handler will take as input, the result of the step that errored (which
-				has its error in the 'error field').
-				<br />
-				<br />
-				Steps are retried until they succeed, or until the maximum number of retries defined for that
-				spec is reached, at which point the error handler is called.
-			</Alert>
-		{/if}
-		<h1 class="p-4"
-			>Select a step kind <Tooltip
-				>Until being defined, this step acts as an identify function, returning as result its input
-				and assigning it a key 'previous_result' if the input is not a json object</Tooltip
-			></h1
-		>
+		<div class="p-4">
+			<h3 class="mb-4">
+				Select a step kind
+				<Tooltip>
+					Until being defined, this step acts as an identify function, returning as result its input
+					and assigning it a key 'previous_result' if the input is not a json object
+				</Tooltip>
+			</h3>
+			{#if $selectedId == 'failure'}
+				<Alert type="info" title="Error handlers are triggered upon non recovered errors">
+					If defined, the error handler will take as input, the result of the step that errored
+					(which has its error in the 'error field').
+					<br />
+					<br />
+					Steps are retried until they succeed, or until the maximum number of retries defined for that
+					spec is reached, at which point the error handler is called.
+				</Alert>
+			{/if}
+		</div>
 		<FlowInputs
 			shouldDisableTriggerScripts={parentModule !== undefined || previousModuleId !== undefined}
 			on:loop={async () => {

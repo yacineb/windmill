@@ -69,11 +69,9 @@
 				</div>
 			{/if}
 		</div>
-		<div
-			class="flex justify-between items-center w-full overflow-hidden border p-2 bg-white text-sm"
-		>
-			<div class="flex-1 truncate">{label}</div>
-			<div class="flex items-center space-x-2">
+		<div class="flex justify-between items-center w-full overflow-hidden border p-2 bg-white">
+			<div class="flex-1 truncate text-sm">{label}</div>
+			<div class="flex items-center gap-2">
 				{#if id}
 					<Badge color="indigo">{id}</Badge>
 				{/if}

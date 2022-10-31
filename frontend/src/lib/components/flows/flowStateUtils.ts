@@ -14,7 +14,7 @@ import {
 	NEVER_TESTED_THIS_FAR,
 	numberToChars
 } from './utils'
-import { Mutex, Semaphore, withTimeout } from 'async-mutex';
+import { Mutex } from 'async-mutex'
 
 export async function loadFlowModuleState(flowModule: FlowModule): Promise<FlowModuleState> {
 	try {
@@ -29,21 +29,20 @@ export async function loadFlowModuleState(flowModule: FlowModule): Promise<FlowM
 	}
 }
 
-export const idMutex = new Mutex();
+export const idMutex = new Mutex()
 
 // Computes the next available id
 export function nextId(): string {
 	const flowState = get(flowStateStore)
 
-	const max = Object.keys(flowState)
-		.reduce((acc, key) => {
-			if (key === 'failure' || key.includes('branch') || key.includes('loop')) {
-				return acc
-			} else {
-				const num = charsToNumber(key)
-				return Math.max(acc, num + 1)
-			}
-		}, 0)
+	const max = Object.keys(flowState).reduce((acc, key) => {
+		if (key === 'failure' || key.includes('branch') || key.includes('loop')) {
+			return acc
+		} else {
+			const num = charsToNumber(key)
+			return Math.max(acc, num + 1)
+		}
+	}, 0)
 	return numberToChars(max)
 }
 
@@ -123,7 +122,9 @@ export async function createBranchAll(id: string): Promise<[FlowModule, FlowModu
 	return [branchesFlowModules, flowModuleState]
 }
 
-export async function fork(flowModule: FlowModule): Promise<[FlowModule & { value: RawScript }, FlowModuleState]> {
+export async function fork(
+	flowModule: FlowModule
+): Promise<[FlowModule & { value: RawScript }, FlowModuleState]> {
 	if (flowModule.value.type !== 'script') {
 		throw new Error('Can only fork a script module')
 	}
@@ -135,7 +136,10 @@ export async function fork(flowModule: FlowModule): Promise<[FlowModule & { valu
 	return [forkedFlowModule, flowModuleState]
 }
 
-async function createInlineScriptModuleFromPath(path: string, id: string): Promise<FlowModule & { value: RawScript }> {
+async function createInlineScriptModuleFromPath(
+	path: string,
+	id: string
+): Promise<FlowModule & { value: RawScript }> {
 	const { content, language } = await getScriptByPath(path)
 
 	return {

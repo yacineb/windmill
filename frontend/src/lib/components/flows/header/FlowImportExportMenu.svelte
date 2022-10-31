@@ -7,7 +7,7 @@
 	import FlowViewer from '$lib/components/FlowViewer.svelte'
 	import SimpleEditor from '$lib/components/SimpleEditor.svelte'
 	import { sendUserToast } from '$lib/utils'
-	import { faFileExport, faFileImport, faGlobe } from '@fortawesome/free-solid-svg-icons'
+	import { faFileAlt, faFileExport, faFileImport } from '@fortawesome/free-solid-svg-icons'
 	import Icon from 'svelte-awesome'
 	import { Button } from '../../common'
 	import { flowStore, initFlow } from '../flowStore'
@@ -28,7 +28,16 @@
 
 <Menu placement="bottom-end">
 	<div slot="trigger">
-		<Button nonCaptureEvent={true} color="light" size="sm" variant="border">Import/Export</Button>
+		<Button
+			nonCaptureEvent={true}
+			color="light"
+			size="xs"
+			spacingSize="sm"
+			variant="border"
+			startIcon={{ icon: faFileAlt }}
+		>
+			Import/Export from JSON
+		</Button>
 	</div>
 
 	<div class="divide-y divide-gray-200">

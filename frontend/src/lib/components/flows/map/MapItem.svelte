@@ -44,11 +44,9 @@
 				</div>
 			</FlowModuleSchemaItem>
 			<div class="flex flex-row w-full">
-				<div class="w-8 shrink-0 line" />
-				<div class="grow my-4 overflow-auto">
-					<div class="w-full pr-1">
-						<FlowModuleSchemaMap bind:modules={mod.value.modules} color="orange" />
-					</div>
+				<div class="w-7 shrink-0 line" />
+				<div class="grow my-4">
+					<FlowModuleSchemaMap bind:modules={mod.value.modules} color="orange" />
 				</div>
 			</div>
 		</li>
