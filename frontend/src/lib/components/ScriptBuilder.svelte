@@ -275,10 +275,12 @@
 					{/if}
 				{/if}
 
-				<Toggle
-					bind:checked={script.is_template}
-					options={{ right: 'Save as a workspace template' }}
-				/>
+				<div class="ml-3">
+					<Toggle
+						bind:checked={script.is_template}
+						options={{ right: 'Save as a workspace template' }}
+					/>
+				</div>
 			</div>
 		</CenteredPage>
 	{:else if step === 2}

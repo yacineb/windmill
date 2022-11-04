@@ -14,8 +14,7 @@
 		'Connection is disposed.',
 		'Connection got disposed.',
 		'Stopping the server timed out',
-		'Canceled',
-		'Missing service editorService'
+		'Canceled'
 	]
 
 	async function loadUser() {
@@ -59,6 +58,11 @@
 				const { message, body, status } = event.reason
 
 				// Unhandled errors from Monaco Editor don't logout the user
+				if (message === 'Missing service editorService') {
+					console.error('Reloading the page to fix a Monaco Editor bug')
+					location.reload()
+					return
+				}
 				if (monacoEditorUnhandledErrors.includes(message)) {
 					return
 				}

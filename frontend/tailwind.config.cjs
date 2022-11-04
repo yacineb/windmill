@@ -350,7 +350,7 @@ const config = {
 						left: '0 !important',
 						width: '100% !important',
 					}
-				}
+				},
 			});
 			addUtilities({
 				'.separator': {

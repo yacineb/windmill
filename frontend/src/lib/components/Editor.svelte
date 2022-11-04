@@ -234,6 +234,10 @@
 						websocketAlive[name] = false
 					})
 
+					reader.onPartialMessage(async (info) => {
+						console.log('PARTIAL', info)
+					})
+
 					try {
 						console.log('started client')
 						await languageClient.start()

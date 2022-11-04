@@ -10,4 +10,7 @@
 		font-weight: 100 900;
 		font-display: swap;
 	}
+	.monaco-workbench > .notifications-toasts.visible {
+		display: none !important;
+	}
 }

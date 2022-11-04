@@ -76,7 +76,7 @@ class DenoLS(LanguageServerWebSocketHandler):
 
 
 class GoLS(LanguageServerWebSocketHandler):
-    procargs = ["gopls", "serve"]
+    procargs = ["gopls", "-remote=auto", "-logfile=auto"]
 
 
 if __name__ == "__main__":
