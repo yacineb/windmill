@@ -226,6 +226,19 @@ export function decodeState(query: string): any {
 	return JSON.parse(decodeURIComponent(atob(query)))
 }
 
+export function decodeArgs(queryArgs: string | undefined): any {
+	if (queryArgs) {
+		const parsed = decodeState(queryArgs)
+		Object.entries(parsed).forEach(([k, v]) => {
+			if (v == '<function call>') {
+				parsed[k] = undefined
+			}
+		})
+		return parsed
+	}
+	return {}
+}
+
 export async function setQuery(url: URL, key: string, value: string): Promise<void> {
 	url.searchParams.set(key, value)
 	await goto(`?${url.searchParams.toString()}`)
@@ -347,7 +360,7 @@ export const params: any;`
 }
 
 export function schemaToTsType(schema: Schema): string {
-	if (!schema) {
+	if (!schema || !schema.properties) {
 		return 'any'
 	}
 	const propKeys = Object.keys(schema.properties)
@@ -382,7 +395,7 @@ export function schemaToTsType(schema: Schema): string {
 export function schemaToObject(schema: Schema, args: Record<string, any>): Object {
 	const object = {}
 
-	if (!schema) {
+	if (!schema || !schema.properties) {
 		return object
 	}
 	const propKeys = Object.keys(schema.properties)

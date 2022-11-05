@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { faArrowLeft, faSpinner } from '@fortawesome/free-solid-svg-icons'
+	import { faArrowLeft } from '@fortawesome/free-solid-svg-icons'
 	import Icon from 'svelte-awesome'
 
 	import UserMenu from '$lib/components/sidebar/UserMenu.svelte'
@@ -11,9 +11,11 @@
 	import '../app.css'
 	import { superadmin, userStore } from '$lib/stores'
 	import CenteredModal from '$lib/components/CenteredModal.svelte'
-	import { beforeNavigate } from '$app/navigation'
+	import { beforeNavigate, goto } from '$app/navigation'
 	import UserSettings from '$lib/components/UserSettings.svelte'
 	import SuperadminSettings from '$lib/components/SuperadminSettings.svelte'
+	import WindmillIcon from '$lib/components/icons/WindmillIcon.svelte'
+	import { page } from '$app/stores'
 
 	OpenAPI.WITH_CREDENTIALS = true
 
@@ -21,6 +23,10 @@
 	let isCollapsed = false
 	let userSettings: UserSettings
 	let superadminSettings: SuperadminSettings
+
+	if ($page.status == 404) {
+		goto('/user/login')
+	}
 
 	beforeNavigate((newNavigationState) => {
 		menuOpen = false
@@ -35,7 +41,15 @@
 <svelte:window bind:innerWidth />
 <UserSettings bind:this={userSettings} />
 
-{#if $userStore}
+{#if $page.status == 404}
+	<CenteredModal title="Page not found, redirecting you to login">
+		<div class="w-full ">
+			<div class="block m-auto w-20">
+				<WindmillIcon class="animate-[spin_6s_linear_infinite]" height="80px" width="80px" />
+			</div>
+		</div>
+	</CenteredModal>
+{:else if $userStore}
 	{#if $superadmin}
 		<SuperadminSettings bind:this={superadminSettings} />
 	{/if}
@@ -179,8 +193,10 @@
 	</div>
 {:else}
 	<CenteredModal title="Loading user">
-		<div class="mx-auto w-0">
-			<Icon class="animate-spin" data={faSpinner} scale={2.0} />
+		<div class="w-full ">
+			<div class="block m-auto w-20">
+				<WindmillIcon class="animate-[spin_6s_linear_infinite]" height="80px" width="80px" />
+			</div>
 		</div>
 	</CenteredModal>
 {/if}
