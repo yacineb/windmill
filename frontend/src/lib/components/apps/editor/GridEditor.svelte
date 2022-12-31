@@ -102,11 +102,14 @@
 
 <div class="bg-white h-full relative">
 	<div class="w-full flex justify-between border-b px-4 py-2  mb-4 items-center gap-4">
-		<h2>{$app.title}</h2>
+		<h2 class="truncate">{$app.title}</h2>
 		<RecomputeAllComponents />
-		<div class="text-2xs text-gray-600"
-			>{policy.on_behalf_of ? `on behalf of ${policy.on_behalf_of}` : ''}</div
-		>
+
+		<div class="text-2xs text-gray-600">
+			<div class="whitespace-nowrap">
+				{policy.on_behalf_of ? `on behalf of ${policy.on_behalf_of}` : ''}
+			</div>
+		</div>
 	</div>
 	<div on:pointerdown={onpointerdown} on:pointerleave={onpointerup} on:pointerup={onpointerup}>
 		<Grid
