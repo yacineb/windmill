@@ -23,8 +23,7 @@
 	import TabContent from '$lib/components/common/tabs/TabContent.svelte'
 	import { Alert, Button, Tab } from '$lib/components/common'
 	import ComponentList from './componentsPanel/ComponentList.svelte'
-	import Icon from 'svelte-awesome'
-	import { faCode, faPlus, faSliders } from '@fortawesome/free-solid-svg-icons'
+	import { faPlus } from '@fortawesome/free-solid-svg-icons'
 	import ContextPanel from './contextPanel/ContextPanel.svelte'
 	import { classNames, encodeState } from '$lib/utils'
 	import AppPreview from './AppPreview.svelte'
@@ -41,6 +40,10 @@
 	import ComponentNavigation from './component/ComponentNavigation.svelte'
 	import ItemPicker from '$lib/components/ItemPicker.svelte'
 	import VariableEditor from '$lib/components/VariableEditor.svelte'
+	import { SecondaryMenu } from './settingsPanel/secondaryMenu'
+	import { Component, Paintbrush, Plus } from 'lucide-svelte'
+	import { findGridItem, findGridItemParentGrid } from './appUtils'
+	import { findItemsById } from '../svelte-grid/utils/matrix'
 
 	export let app: App
 	export let path: string
@@ -50,7 +53,7 @@
 	export let fromHub: boolean = false
 
 	const appStore = writable<App>(app)
-	const selectedComponent = writable<string | undefined>(undefined)
+	const selectedComponent = writable<string[] | undefined>(undefined)
 	const mode = writable<EditorMode>(initialMode)
 	const breakpoint = writable<EditorBreakpoint>('lg')
 	const summaryStore = writable(summary)
@@ -82,7 +85,7 @@
 		mode,
 		connectingInput,
 		breakpoint,
-		runnableComponents,
+		runnableComponents: writable({}),
 		appPath: path,
 		workspace: $workspaceStore ?? '',
 		onchange: () => saveDraft(),
@@ -97,14 +100,15 @@
 		parentWidth: writable(0),
 		state: writable({}),
 		componentControl: writable({}),
-		hoverStore: writable(undefined)
+		hoverStore: writable(undefined),
+		allIdsInPath: writable([])
 	})
 
 	setContext<AppEditorContext>('AppEditorContext', {
 		history,
 		pickVariableCallback,
 		ontextfocus: writable(undefined),
-		movingcomponent: writable(undefined),
+		movingcomponents: writable(undefined),
 		selectedComponentInEditor: writable(undefined)
 	})
 
@@ -139,10 +143,33 @@
 
 	let selectedTab: 'insert' | 'settings' = 'insert'
 
-	$: if ($selectedComponent) {
+	let befSelected: string | undefined = undefined
+	$: if ($selectedComponent?.[0] != befSelected) {
+		befSelected = $selectedComponent?.[0]
 		selectedTab = 'settings'
-	} else {
-		selectedTab = 'insert'
+		if (befSelected) {
+			if (!['ctx', 'state'].includes(befSelected) && !befSelected?.startsWith('bg_')) {
+				let item = findGridItem($appStore, befSelected)
+				if (item?.data.type === 'containercomponent') {
+					$focusedGrid = {
+						parentComponentId: befSelected,
+						subGridIndex: 0
+					}
+				} else {
+					let subgrid = findGridItemParentGrid($appStore, befSelected)
+					if (subgrid) {
+						try {
+							$focusedGrid = {
+								parentComponentId: subgrid.split('-')[0],
+								subGridIndex: parseInt(subgrid.split('-')[1])
+							}
+						} catch {}
+					} else {
+						$focusedGrid = undefined
+					}
+				}
+			}
+		}
 	}
 
 	let itemPicker: ItemPicker | undefined = undefined
@@ -192,7 +219,7 @@
 					<Pane size={15} minSize={5} maxSize={33}>
 						<ContextPanel />
 					</Pane>
-					<Pane size={64}>
+					<Pane size={63}>
 						<SplitPanesWrapper>
 							<Splitpanes horizontal>
 								<Pane size={70}>
@@ -216,7 +243,7 @@
 											{#if $appStore.grid}
 												<ComponentNavigation />
 
-												<div on:pointerdown|stopPropagation class={width}>
+												<div on:pointerdown|stopPropagation class={twMerge(width, 'mx-auto')}>
 													<GridEditor {policy} />
 												</div>
 
@@ -233,31 +260,30 @@
 							</Splitpanes>
 						</SplitPanesWrapper>
 					</Pane>
-					<Pane size={21} minSize={5} maxSize={33}>
+					<Pane size={22} minSize={5} maxSize={33}>
 						<div class="relative flex flex-col h-full">
 							<Tabs bind:selected={selectedTab} wrapperClass="!h-[40px]" class="!h-full">
 								<Tab value="insert" size="xs">
-									<div class="m-1 center-center gap-2">
-										<Icon data={faPlus} />
-										<span>Insert</span>
+									<div class="m-1 center-center gap-1">
+										<Plus size={18} />
 									</div>
 								</Tab>
 								<Tab value="settings" size="xs">
-									<div class="m-1 center-center gap-2">
-										<Icon data={faSliders} />
-										<span>Settings</span>
+									<div class="m-1 center-center gap-1">
+										<Component size={18} />
+										<span>Component</span>
 									</div>
 								</Tab>
 								<Tab value="css" size="xs">
-									<div class="m-1 center-center gap-2">
-										<Icon data={faCode} />
-										<span>CSS</span>
+									<div class="m-1 center-center gap-1">
+										<Paintbrush size={18} />
 									</div>
 								</Tab>
 								<div slot="content" class="h-full overflow-y-auto">
 									<TabContent class="overflow-auto h-full" value="settings">
 										{#if $selectedComponent !== undefined}
 											<SettingsPanel />
+											<SecondaryMenu />
 										{:else}
 											<div class="min-w-[150px] text-sm text-gray-500 text-center py-8 px-2">
 												Select a component to see the settings&nbsp;for&nbsp;it

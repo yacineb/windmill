@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { Button } from '$lib/components/common'
-	import { faPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+	import { faPlus } from '@fortawesome/free-solid-svg-icons'
 	import { X } from 'lucide-svelte'
 	import { createEventDispatcher } from 'svelte'
 	import { fade } from 'svelte/transition'
-	import type { InputType, StaticAppInput, StaticInput, StaticOptions } from '../../inputType'
+	import type { InputType, StaticInput, StaticOptions } from '../../inputType'
 	import SubTypeEditor from './SubTypeEditor.svelte'
 
 	export let componentInput: StaticInput<any[]>
@@ -25,8 +25,8 @@
 				value.push(0)
 			} else if (subFieldType === 'object') {
 				value.push({})
-			} else if (subFieldType === 'labeledresource') {
-				value.push({ value: '', label: '' })
+			} else if (subFieldType === 'labeledresource' || subFieldType === 'labeledselect') {
+				value.push({ value: 'foo', label: 'bar' })
 			} else if (subFieldType === 'tab-select') {
 				value.push({ id: '', index: 0 })
 			} else if (

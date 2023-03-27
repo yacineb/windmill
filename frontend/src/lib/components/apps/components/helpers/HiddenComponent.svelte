@@ -14,8 +14,8 @@
 	export let name: string
 	export let inlineScript: InlineScript | undefined
 	export let fields: Record<string, StaticAppInput | ConnectedAppInput | RowAppInput | UserAppInput>
-	export let autoRefresh: boolean
-	export let doNotRecomputeOnInputChanged: boolean = false
+	export let doNotRecomputeOnInputChanged: boolean
+	export let recomputableByRefreshButton: boolean
 
 	let result: any = undefined
 
@@ -31,7 +31,7 @@
 	render={false}
 	{id}
 	{fields}
-	{autoRefresh}
+	autoRefresh={true}
 	{doNotRecomputeOnInputChanged}
 	bind:result
 	transformer={undefined}
@@ -41,8 +41,8 @@
 		type: 'runnableByName'
 	}}
 	wrapperClass="hidden"
-	recomputable
 	{outputs}
+	{recomputableByRefreshButton}
 >
 	<slot />
 </RunnableComponent>

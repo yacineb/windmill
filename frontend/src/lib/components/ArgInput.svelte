@@ -188,6 +188,7 @@
 								use:autosize
 								rows="1"
 								bind:value={description}
+								on:keydown|stopPropagation 
 								placeholder="Field description"
 							/>
 							{#if type == 'string' && format != 'date-time'}
@@ -234,7 +235,6 @@
 					<input
 						{autofocus}
 						on:focus={(e) => {
-							window.dispatchEvent(new Event('pointerup'))
 							dispatch('focus')
 						}}
 						{disabled}
@@ -253,7 +253,6 @@
 				<Toggle
 					on:pointerdown={(e) => {
 						e?.stopPropagation()
-						window.dispatchEvent(new Event('pointerup'))
 					}}
 					{disabled}
 					class={valid
@@ -333,12 +332,12 @@
 					<textarea
 						bind:this={el}
 						on:focus={(e) => {
-							window.dispatchEvent(new Event('pointerup'))
 							dispatch('focus')
 						}}
 						{autofocus}
 						{disabled}
 						use:autosize
+						on:keydown|stopPropagation 
 						style="max-height: {maxHeight}"
 						on:input={() => {
 							dispatch('input', { rawValue: value, isRaw: false })
@@ -353,7 +352,6 @@
 			{:else if inputCat == 'enum'}
 				<select
 					on:focus={(e) => {
-						window.dispatchEvent(new Event('pointerup'))
 						dispatch('focus')
 					}}
 					{disabled}
@@ -370,7 +368,6 @@
 				<div class="border my-1 mb-4 w-full border-gray-400">
 					<SimpleEditor
 						on:focus={(e) => {
-							window.dispatchEvent(new Event('pointerup'))
 							dispatch('focus')
 						}}
 						on:blur={() => dispatch('blur')}
@@ -409,11 +406,11 @@
 								rows="1"
 								bind:this={el}
 								on:focus={(e) => {
-									window.dispatchEvent(new Event('pointerup'))
 									dispatch('focus')
 								}}
 								on:blur={() => dispatch('blur')}
 								use:autosize
+								on:keydown|stopPropagation 
 								type="text"
 								{disabled}
 								class="col-span-10 {valid

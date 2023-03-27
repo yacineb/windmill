@@ -18,7 +18,6 @@
 	import DisplayResult from '$lib/components/DisplayResult.svelte'
 	import Dropdown from '$lib/components/Dropdown.svelte'
 	import FlowProgressBar from '$lib/components/flows/FlowProgressBar.svelte'
-	import { idMutex } from '$lib/components/flows/flowStateUtils'
 	import FlowStatusViewer from '$lib/components/FlowStatusViewer.svelte'
 	import JobArgs from '$lib/components/JobArgs.svelte'
 	import LogViewer from '$lib/components/LogViewer.svelte'
@@ -43,12 +42,9 @@
 		Eye,
 		Laptop2,
 		Loader2,
-		MoreVertical,
 		Pencil,
-		Redo,
 		SlidersHorizontal,
 		Smartphone,
-		Undo,
 		X
 	} from 'lucide-svelte'
 	import { getContext } from 'svelte'
@@ -251,7 +247,17 @@
 	let lock = false
 	function onKeyDown(event: KeyboardEvent) {
 		if (lock) return
+
+		let classes = event.target?.['className']
+		if (
+			(typeof classes === 'string' && classes.includes('inputarea')) ||
+			['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName!)
+		) {
+			return
+		}
+		
 		lock = true
+
 		switch (event.key) {
 			case 'Z':
 				if (event.ctrlKey) {

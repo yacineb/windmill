@@ -13,11 +13,16 @@
 	import InlineScriptEditor from './InlineScriptEditor.svelte'
 	import { computeFields } from './utils'
 	import { deepEqual } from 'fast-equals'
+	import { getContext } from 'svelte'
+	import type { AppViewerContext } from '../../types'
 
 	export let componentInput: AppInput | undefined
 	export let defaultUserInput = false
+	export let componentType: string
 	export let id: string
 	export let transformer: boolean
+
+	const { app } = getContext<AppViewerContext>('AppViewerContext')
 
 	async function fork(path: string) {
 		let { content, language, schema } = await getScriptByPath(path)
@@ -93,8 +98,8 @@
 			}}
 		/>
 	{:else}
-		<span class="px-2 text-gray-600"
-			>Selected editor component is a transformer but component has no transformer
+		<span class="px-2 text-gray-600">
+			Selected editor component is a transformer but component has no transformer
 		</span>
 	{/if}
 {:else if componentInput && componentInput.type == 'runnable'}
@@ -111,7 +116,7 @@
 			/>
 		{:else}
 			<EmptyInlineScript
-				{id}
+				{componentType}
 				name={componentInput.runnable.name}
 				on:delete={deleteInlineScript}
 				on:new={(e) => {
@@ -121,6 +126,7 @@
 						componentInput?.runnable?.type === 'runnableByName'
 					) {
 						componentInput.runnable.inlineScript = e.detail
+						$app = $app
 					}
 				}}
 			/>
@@ -139,6 +145,7 @@
 								componentInput.runnable?.type === 'runnableByPath'
 							) {
 								fork(componentInput.runnable.path)
+								$app = $app
 							}
 						}}
 					>
@@ -157,8 +164,10 @@
 							on:click={() => {
 								flowPath = componentInput?.['runnable']?.path
 								drawerFlowViewer.openDrawer()
-							}}>Expand</Button
+							}}
 						>
+							Expand
+						</Button>
 						<Button
 							size="xs"
 							startIcon={{ icon: faPen }}
@@ -172,8 +181,9 @@
 							endIcon={{ icon: faExternalLinkAlt }}
 							target="_blank"
 							href="/flows/get/{componentInput?.['runnable']?.path}?workspace_id={$workspaceStore}"
-							>Details page</Button
 						>
+							Details page
+						</Button>
 					</div>
 					<FlowPathViewer path={componentInput.runnable.path} />
 				{:else}

@@ -9,8 +9,10 @@
 use const_format::concatcp;
 use itertools::Itertools;
 use lazy_static::lazy_static;
+use once_cell::sync::OnceCell;
 use regex::Regex;
 use sqlx::{Pool, Postgres, Transaction};
+use windmill_api_client::Client;
 use std::{
     borrow::Borrow, collections::HashMap, io, os::unix::process::ExitStatusExt, panic,
     process::Stdio, time::Duration,
@@ -23,7 +25,7 @@ use windmill_common::{
     flows::{FlowModuleValue, FlowValue},
     scripts::{ScriptHash, ScriptLang},
     utils::rd_string,
-    variables, BASE_URL,
+    variables, BASE_URL, users::SUPERADMIN_SECRET_EMAIL,
 };
 use windmill_queue::{canceled_job_to_result, get_queued_job, pull, JobKind, QueuedJob, CLOUD_HOSTED};
 
@@ -34,7 +36,7 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, Command},
     sync::{
-        mpsc::{self, Sender},  watch, broadcast,
+        mpsc::{self, Sender},  watch, broadcast
     },
     time::{interval, sleep, Instant, MissedTickBehavior},
 };
@@ -239,7 +241,7 @@ pub async fn create_token_for_owner<'c>(
     let is_super_admin = sqlx::query_scalar!("SELECT super_admin FROM password WHERE email = $1", email)
             .fetch_optional(&mut tx)
             .await?
-            .unwrap_or(false);
+            .unwrap_or(false) || email == SUPERADMIN_SECRET_EMAIL;
 
     sqlx::query_scalar!(
         "INSERT INTO token
@@ -329,9 +331,8 @@ lazy_static::lazy_static! {
         .ok()
         .map(|x| format!(";{x}"))
         .unwrap_or_else(|| String::new());
-    static ref NPM_CONFIG_REGISTRY: Option<String> = std::env::var("NPM_CONFIG_REGISTRY").ok();
-    
 
+    static ref NPM_CONFIG_REGISTRY: Option<String> = std::env::var("NPM_CONFIG_REGISTRY").ok();
 
     static ref DENO_FLAGS: Option<Vec<String>> = std::env::var("DENO_FLAGS")
         .ok()
@@ -389,10 +390,19 @@ lazy_static::lazy_static! {
         .ok()
         .and_then(|x| x.parse::<u16>().ok())
         .unwrap_or(DEFAULT_TIMEOUT as u16);
+
     static ref TIMEOUT_DURATION: Duration = Duration::from_secs(*TIMEOUT as u64);
 
+    static ref ZOMBIE_JOB_TIMEOUT: String = std::env::var("ZOMBIE_JOB_TIMEOUT")
+        .ok()
+        .and_then(|x| x.parse::<String>().ok())
+        .unwrap_or_else(|| "30".to_string());
 
-    static ref ZOMBIE_JOB_TIMEOUT: String = (*TIMEOUT as u32 * 5).to_string();
+
+    pub static ref RESTART_ZOMBIE_JOBS: bool = std::env::var("RESTART_ZOMBIE_JOBS")
+        .ok()
+        .and_then(|x| x.parse::<bool>().ok())
+        .unwrap_or(true);
 
     static ref SESSION_TOKEN_EXPIRY: i32 = (*TIMEOUT as i32) * 2;
 }
@@ -400,6 +410,21 @@ lazy_static::lazy_static! {
 //only matter if CLOUD_HOSTED
 const MAX_RESULT_SIZE: usize = 1024 * 1024 * 2; // 2MB
 
+#[derive(Clone)]
+pub struct AuthedClient {
+    pub base_internal_url: String,
+    pub workspace: String,
+    pub token: String,
+    pub client: OnceCell<Client>
+}
+
+impl AuthedClient {
+    pub fn get_client(&self) -> &Client {
+        return self.client.get_or_init(|| {
+            windmill_api_client::create_client(&self.base_internal_url, self.token.clone())
+        });
+    }
+}
 
 
 #[tracing::instrument(level = "trace")]
@@ -669,13 +694,13 @@ pub async fn run_worker(
                     )
                     .await.expect("could not create job token");
                     tx.commit().await.expect("could not commit job token");
-                    let job_client = windmill_api_client::create_client(base_internal_url, token.clone());
+                    let authed_client = AuthedClient { base_internal_url: base_internal_url.to_string(), token: token.clone(), workspace: job.workspace_id.to_string(), client: OnceCell::new() };
                     let is_flow = job.job_kind == JobKind::Flow || job.job_kind == JobKind::FlowPreview || job.job_kind == JobKind::FlowDependencies;
 
                     if let Some(err) = handle_queued_job(
                         job.clone(),
                         db,
-                        &job_client,
+                        &authed_client,
                         token,
                         &worker_name,
                         &worker_dir,
@@ -689,7 +714,7 @@ pub async fn run_worker(
                     {
                         handle_job_error(
                             db,
-                            &job_client,
+                            &authed_client,
                             job,
                             err,
                             Some(metrics),
@@ -733,7 +758,7 @@ pub async fn run_worker(
 
 async fn handle_job_error(
     db: &Pool<Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     job: QueuedJob,
     err: Error,
     metrics: Option<Metrics>,
@@ -832,7 +857,7 @@ fn extract_error_value(log_lines: &str) -> serde_json::Value {
 async fn handle_queued_job(
     job: QueuedJob,
     db: &sqlx::Pool<sqlx::Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     token: String,
     worker_name: &str,
     worker_dir: &str,
@@ -864,6 +889,9 @@ async fn handle_queued_job(
         }
         _ => {
             let mut logs = "".to_string();
+            if let Some(log_str) = &job.logs {
+                logs.push_str(&log_str);
+            }
 
             if job.is_flow_step {
                 update_flow_status_in_progress(
@@ -1012,14 +1040,14 @@ async fn write_file(dir: &str, path: &str, content: &str) -> error::Result<File>
 #[async_recursion]
 async fn transform_json_value(
     name: &str,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     workspace: &str,
     v: Value,
 ) -> error::Result<Value> {
     match v {
         Value::String(y) if y.starts_with("$var:") => {
             let path = y.strip_prefix("$var:").unwrap();
-            let v = client
+            let v = client.get_client()
                 .get_variable(workspace, path, Some(true))
                 .await
                 .map_err(|_| Error::NotFound(format!("Variable {path} not found for `{name}`")))
@@ -1035,7 +1063,7 @@ async fn transform_json_value(
                     "Argument `{name}` is an invalid resource path: {path}",
                 )));
             }
-            let v = client
+            let v = client.get_client()
                 .get_resource_value(workspace, path)
                 .await
                 .map_err(|_| Error::NotFound(format!("Resource {path} not found for `{name}`")))?
@@ -1059,7 +1087,7 @@ async fn transform_json_value(
 async fn handle_code_execution_job(
     job: &QueuedJob,
     db: &sqlx::Pool<sqlx::Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     token: String,
     job_dir: &str,
     worker_dir: &str,
@@ -1205,7 +1233,7 @@ async fn handle_go_job(
     logs: &mut String,
     job: &QueuedJob,
     db: &sqlx::Pool<sqlx::Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     token: String,
     inner_content: &str,
     job_dir: &str,
@@ -1241,7 +1269,8 @@ async fn handle_go_job(
         db,
         true,
         skip_go_mod,
-        worker_name
+        worker_name,
+        &job.workspace_id,
     )
     .await?;
 
@@ -1359,7 +1388,7 @@ func Run(req Req) (interface{{}}, error){{
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()?;
-        handle_child(&job.id, db, logs,  build_go, false, worker_name).await?;
+        handle_child(&job.id, db, logs,  build_go, false, worker_name, &job.workspace_id).await?;
 
         Command::new(NSJAIL_PATH.as_str())
             .current_dir(job_dir)
@@ -1385,7 +1414,7 @@ func Run(req Req) (interface{{}}, error){{
             .stderr(Stdio::piped())
             .spawn()?
     };
-    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name).await?;
+    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name, &job.workspace_id).await?;
     read_result(job_dir).await
 }
 
@@ -1463,7 +1492,7 @@ async fn handle_bash_job(
             .stderr(Stdio::piped())
             .spawn()?
     };
-    handle_child(&job.id, db, logs,  child, !*DISABLE_NSJAIL, worker_name).await?;
+    handle_child(&job.id, db, logs,  child, !*DISABLE_NSJAIL, worker_name, &job.workspace_id).await?;
     //for now bash jobs have an empty result object
     Ok(serde_json::json!(logs
         .lines()
@@ -1505,7 +1534,7 @@ async fn handle_deno_job(
     logs: &mut String,
     job: &QueuedJob,
     db: &sqlx::Pool<sqlx::Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     token: String,
     job_dir: &str,
     inner_content: &String,
@@ -1551,15 +1580,27 @@ run().catch(async (e) => {{
 }});
 "#,
     );
-    write_file(job_dir, "main.ts", &wrapper_content).await?;
     let w_id = job.workspace_id.clone();
+    let script_path_split = job.script_path().split("/");
+    let script_path_parts_len = script_path_split.clone().count();
+    let mut relative_mounts = "".to_string();
+    for c in 0..script_path_parts_len {
+        relative_mounts += ",\n          ";
+        relative_mounts += &format!("\"./{}\": \"{base_internal_url}/api/w/{w_id}/scripts/raw/p/{}{}\"",
+            (0..c).map(|_| "../").join(""),
+            &script_path_split.clone().take(script_path_parts_len - c - 1).join("/"),
+            if c == script_path_parts_len - 1 { "" } else { "/" },
+        );
+    }
+    write_file(job_dir, "main.ts", &wrapper_content).await?;
     let import_map = format!(
         r#"{{
         "imports": {{
           "/": "{base_internal_url}/api/w/{w_id}/scripts/raw/p/",
-          "./": "./"
+          "./inner.ts": "./inner.ts",
+          "./main.ts": "./main.ts"{relative_mounts}
         }}
-      }}"#
+      }}"#,
     );
     write_file(job_dir, "import_map.json", &import_map).await?;
     let mut reserved_variables = get_reserved_variables(job, &token, db).await?;
@@ -1642,13 +1683,13 @@ run().catch(async (e) => {{
     }
     .instrument(trace_span!("create_deno_jail"))
     .await?;
-    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name).await?;
+    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name, &job.workspace_id).await?;
     read_result(job_dir).await
 }
 
 #[tracing::instrument(level = "trace", skip_all)]
 async fn create_args_and_out_file(
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     job: &QueuedJob,
     job_dir: &str,
 ) -> Result<(), Error> {
@@ -1676,11 +1717,11 @@ async fn handle_python_job(
     job: &QueuedJob,
     logs: &mut String,
     db: &sqlx::Pool<sqlx::Postgres>,
-    client: &windmill_api_client::Client,
+    client: &AuthedClient,
     token: String,
     inner_content: &String,
     shared_mount: &str,
-    base_internal_url: &str,
+    base_internal_url: &str
 ) -> error::Result<serde_json::Value> {
     create_dependencies_dir(job_dir).await;
 
@@ -1694,7 +1735,7 @@ async fn handle_python_job(
             if requirements.is_empty() {
                 "".to_string()
             } else {
-                pip_compile(&job.id, &requirements, logs, job_dir, db, worker_name)
+                pip_compile(&job.id, &requirements, logs, job_dir, db, worker_name, &job.workspace_id)
                     .await
                     .map_err(|e| {
                         Error::ExecutionErr(format!("pip compile failed: {}", e.to_string()))
@@ -1911,7 +1952,7 @@ mount {{
             .spawn()?
     };
 
-    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name).await?;
+    handle_child(&job.id, db, logs, child, !*DISABLE_NSJAIL, worker_name, &job.workspace_id).await?;
     read_result(job_dir).await
 }
 
@@ -1957,7 +1998,8 @@ async fn handle_dependency_job(
         logs,
         job_dir,
         db,
-        worker_name
+        worker_name,
+        &job.workspace_id,
     )
     .await;
     match content {
@@ -2023,7 +2065,8 @@ async fn handle_flow_dependency_job(
             logs,
             job_dir,
             db,
-            worker_name
+            worker_name,
+            &job.workspace_id,
         )
         .await;
         match new_lock {
@@ -2139,12 +2182,13 @@ async fn capture_dependency_job(
     logs: &mut String,
     job_dir: &str,
     db: &sqlx::Pool<sqlx::Postgres>,
-    worker_name: &str
+    worker_name: &str,
+    w_id: &str,
 ) -> error::Result<String> {
     match job_language {
         ScriptLang::Python3 => {
             create_dependencies_dir(job_dir).await;
-            pip_compile(job_id, job_raw_code, logs, job_dir, db, worker_name).await
+            pip_compile(job_id, job_raw_code, logs, job_dir, db, worker_name, w_id).await
         }
         ScriptLang::Go => {
             install_go_dependencies(
@@ -2155,7 +2199,8 @@ async fn capture_dependency_job(
                 db,
                 false,
                 false,
-                worker_name
+                worker_name,
+                w_id
             )
             .await
         }
@@ -2173,7 +2218,8 @@ async fn pip_compile(
     logs: &mut String,
     job_dir: &str,
     db: &Pool<Postgres>,
-    worker_name: &str
+    worker_name: &str,
+    w_id: &str,
 ) -> error::Result<String> {
     logs.push_str(&format!("\nresolving dependencies..."));
     set_logs(logs, job_id, db).await;
@@ -2206,7 +2252,7 @@ async fn pip_compile(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    handle_child(job_id, db, logs,  child, false, worker_name)
+    handle_child(job_id, db, logs,  child, false, worker_name, &w_id)
         .await
         .map_err(|e| Error::ExecutionErr(format!("Lock file generation failed: {e:?}")))?;
     let path_lock = format!("{job_dir}/requirements.txt");
@@ -2229,7 +2275,8 @@ async fn install_go_dependencies(
     db: &sqlx::Pool<sqlx::Postgres>,
     preview: bool,
     skip_go_mod: bool,
-    worker_name: &str
+    worker_name: &str,
+    w_id: &str
 ) -> error::Result<String> {
     if !skip_go_mod {
         gen_go_mymod(code, job_dir).await?;
@@ -2240,7 +2287,7 @@ async fn install_go_dependencies(
             .stderr(Stdio::piped())
             .spawn()?;
 
-        handle_child(job_id, db, logs,   child, false, worker_name).await?;
+        handle_child(job_id, db, logs,   child, false, worker_name, w_id).await?;
     }
     let child = Command::new(GO_PATH.as_str())
         .current_dir(job_dir)
@@ -2248,7 +2295,7 @@ async fn install_go_dependencies(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    handle_child(job_id, db, logs,  child, false, worker_name)
+    handle_child(job_id, db, logs,  child, false, worker_name, &w_id)
         .await
         .map_err(|e| Error::ExecutionErr(format!("Lock file generation failed: {e:?}")))?;
 
@@ -2355,6 +2402,7 @@ async fn handle_child(
     mut child: Child,
     nsjail: bool,
     worker_name: &str,
+    w_id: &str,
 ) -> error::Result<()> {
     let update_job_interval = Duration::from_millis(500);
     let write_logs_delay = Duration::from_millis(500);
@@ -2430,11 +2478,29 @@ async fn handle_child(
     let wait_on_child = async {
         let db = db.clone();
 
+        #[cfg(not(feature = "enterprise"))]
+        let timeout_duration = *TIMEOUT_DURATION;
+
+        #[cfg(feature = "enterprise")]
+        let premium_workspace = sqlx::query_scalar!("SELECT premium FROM workspace WHERE id = $1", w_id)
+            .fetch_one(&db)
+            .await
+            .map_err(|e| {
+                tracing::error!(%e, "error getting premium workspace for job {job_id}: {e}");
+            }).unwrap_or(false);
+        
+        #[cfg(feature = "enterprise")]
+        let timeout_duration = if premium_workspace {
+            *TIMEOUT_DURATION*6 //30mins
+        } else {
+            *TIMEOUT_DURATION
+        };
+
         let kill_reason = tokio::select! {
             biased;
             result = child.wait() => return result.map(Ok),
             Ok(()) = too_many_logs.changed() => KillReason::TooManyLogs,
-            _ = sleep(*TIMEOUT_DURATION) => KillReason::Timeout,
+            _ = sleep(timeout_duration) => KillReason::Timeout,
             _ = update_job => KillReason::Cancelled,
         };
         tx.send(()).expect("rx should never be dropped");
@@ -2693,7 +2759,7 @@ pub async fn handle_zombie_jobs_periodically(
         handle_zombie_jobs(db, base_internal_url).await;
 
         tokio::select! {
-            _ = tokio::time::sleep(Duration::from_secs(60))    => (),
+            _ = tokio::time::sleep(Duration::from_secs(30))    => (),
             _ = rx.recv() => {
                     println!("received killpill for monitor job");
                     break;
@@ -2703,28 +2769,35 @@ pub async fn handle_zombie_jobs_periodically(
 }
 
 async fn handle_zombie_jobs(db: &Pool<Postgres>, base_internal_url: &str) {
-    let restarted = sqlx::query!(
-            "UPDATE queue SET running = false WHERE last_ping < now() - ($1 || ' seconds')::interval AND running = true AND job_kind != $2 AND same_worker = false RETURNING id, workspace_id, last_ping",
-            *ZOMBIE_JOB_TIMEOUT,
-            JobKind::Flow: JobKind,
-        )
-        .fetch_all(db)
-        .await
-        .ok()
-        .unwrap_or_else(|| vec![]);
+    if *RESTART_ZOMBIE_JOBS {
+        let restarted = sqlx::query!(
+                "UPDATE queue SET running = false, started_at = null, logs = logs || '\nRestarted job after not receiving job''s ping for too long the ' || now() || '\n\n' WHERE last_ping < now() - ($1 || ' seconds')::interval AND running = true AND job_kind != $2 AND job_kind != $3 AND same_worker = false RETURNING id, workspace_id, last_ping",
+                *ZOMBIE_JOB_TIMEOUT,
+                JobKind::Flow: JobKind,
+                JobKind::FlowPreview: JobKind,
+            )
+            .fetch_all(db)
+            .await
+            .ok()
+            .unwrap_or_else(|| vec![]);
 
-    QUEUE_ZOMBIE_RESTART_COUNT.inc_by(restarted.len() as _);
-    for r in restarted {
-        tracing::info!(
-            "restarted zombie job {} {} {}",
-            r.id,
-            r.workspace_id,
-            r.last_ping
-        );
+        QUEUE_ZOMBIE_RESTART_COUNT.inc_by(restarted.len() as _);
+        for r in restarted {
+            tracing::info!(
+                "restarted zombie job {} {} {}",
+                r.id,
+                r.workspace_id,
+                r.last_ping
+            );
+        }
     }
 
+    let mut timeout_query = "SELECT * FROM queue WHERE last_ping < now() - ($1 || ' seconds')::interval AND running = true AND job_kind != $2".to_string();
+    if *RESTART_ZOMBIE_JOBS  {
+        timeout_query.push_str(" AND same_worker = true");
+    };
     let timeouts = sqlx::query_as::<_, QueuedJob>(
-            "SELECT * FROM queue WHERE last_ping < now() - ($1 || ' seconds')::interval AND running = true AND job_kind != $2 AND same_worker = true",
+            &timeout_query
         )
         .bind(ZOMBIE_JOB_TIMEOUT.as_str())
         .bind(JobKind::Flow)
@@ -2736,7 +2809,7 @@ async fn handle_zombie_jobs(db: &Pool<Postgres>, base_internal_url: &str) {
     QUEUE_ZOMBIE_DELETE_COUNT.inc_by(timeouts.len() as _);
     for job in timeouts {
         tracing::info!(
-            "timedouts zombie same_worker job {} {}",
+            "timedout zombie job {} {}",
             job.id,
             job.workspace_id,
         );
@@ -2756,13 +2829,15 @@ async fn handle_zombie_jobs(db: &Pool<Postgres>, base_internal_url: &str) {
         .await
         .expect("could not create job token");
         tx.commit().await.expect("could not commit job token");
-        let client = windmill_api_client::create_client(base_internal_url, token.clone());
+        let client = AuthedClient { base_internal_url: base_internal_url.to_string(), token: token.clone(), workspace: job.workspace_id.to_string(), client: OnceCell::new() };
 
+        let last_ping = job.last_ping.clone();
         let _ = handle_job_error(
             db,
             &client,
             job,
-            error::Error::ExecutionErr("Same worker job timed out".to_string()),
+            error::Error::ExecutionErr(format!("Job timed out after no ping from job since {} (ZOMBIE_JOB_TIMEOUT: {})",
+                last_ping.map(|x| x.to_string()).unwrap_or_else(|| "no ping".to_string()), *ZOMBIE_JOB_TIMEOUT)),
             None,
             true,
             same_worker_tx_never_used,
@@ -2865,7 +2940,7 @@ async fn handle_python_reqs(
                 .spawn()?
         };
 
-        let child = handle_child(&job.id, db, logs, child, false, worker_name).await;
+        let child = handle_child(&job.id, db, logs, child, false, worker_name, &job.workspace_id).await;
         tracing::info!(
             worker_name = %worker_name,
             job_id = %job.id,

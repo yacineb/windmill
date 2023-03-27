@@ -81,8 +81,8 @@
 			Inconsistent labeled resource object
 		{/if}
 	{:else if fieldType === 'color'}
-		<ColorInput bind:componentInput />
-	{:else if fieldType === 'object'}
+		<ColorInput bind:value={componentInput.value} />
+	{:else if fieldType === 'object' || fieldType == 'labeledselect'}
 		{#if format?.startsWith('resource-')}
 			<ResourcePicker
 				initialValue={componentInput.value?.split('$res:')[1] || ''}

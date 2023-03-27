@@ -13,7 +13,7 @@
 	export let id: string
 	export let result: any = undefined
 	export let initializing: boolean = true
-
+	export let loading: boolean = false
 	export let extraQueryParams: Record<string, any> = {}
 	export let autoRefresh: boolean = true
 	export let runnableComponent: RunnableComponent | undefined = undefined
@@ -59,6 +59,9 @@
 	}
 
 	export function onSuccess() {
+		if (recomputeIds) {
+			recomputeIds.map((id) => $runnableComponents?.cb?.[id]?.())
+		}
 		if (!doOnSuccess) return
 
 		if (doOnSuccess.selected == 'none') return
@@ -89,10 +92,6 @@
 		) {
 			sendUserToast(doOnSuccess.configuration.sendToast.message)
 		}
-
-		if (recomputeIds) {
-			recomputeIds.map((id) => $runnableComponents?.[id]?.())
-		}
 	}
 </script>
 
@@ -101,6 +100,7 @@
 {:else if componentInput.type === 'runnable' && isRunnableDefined(componentInput)}
 	<RunnableComponent
 		{extraKey}
+		bind:loading
 		bind:this={runnableComponent}
 		fields={componentInput.fields}
 		bind:result
