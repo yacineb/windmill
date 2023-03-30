@@ -16,8 +16,8 @@
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.31.1",
-		"@sveltejs/adapter-static": "^1.0.0",
-		"@sveltejs/kit": "^1.0.0-next.589",
+		"@sveltejs/adapter-static": "^2.0.1",
+		"@sveltejs/kit": "^1.14.0",
 		"@sveltejs/package": "^1.0.2",
 		"@tailwindcss/forms": "^0.5.3",
 		"@tailwindcss/typography": "^0.5.8",
@@ -46,7 +46,7 @@
 		"simple-svelte-autocomplete": "^2.5.1",
 		"style-to-object": "^0.4.1",
 		"stylelint-config-recommended": "^9.0.0",
-		"svelte": "^3.55.1",
+		"svelte": "^3.57.0",
 		"svelte-awesome": "^3.0.0",
 		"svelte-awesome-color-picker": "^2.4.1",
 		"svelte-check": "^3.0.2",
@@ -60,7 +60,7 @@
 		"tailwindcss": "^3.2.2",
 		"tslib": "^2.4.1",
 		"typescript": "^5.0.2",
-		"vite": "^4.0.4",
+		"vite": "^4.2.1",
 		"yootils": "^0.3.1"
 	},
 	"type": "module",
