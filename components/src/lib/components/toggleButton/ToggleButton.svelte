@@ -1,0 +1,28 @@
+<script lang="ts">
+	import { getContext } from 'svelte';
+	import { Button } from '..';
+	import { classNames } from '../../utils';
+	import type { ToggleButtonContext } from './ToggleButtonGroup.svelte';
+
+	export let value: any;
+	export let position: 'left' | 'center' | 'right';
+	export let light = false;
+	export let title: string | undefined = undefined;
+	const { select, selected } = getContext<ToggleButtonContext>('ToggleButtonGroup');
+</script>
+
+<Button
+	{...$$props}
+	{title}
+	on:click={() => select(value)}
+	btnClasses={classNames(
+		'border-gray-200 focus:ring-0 w-full',
+		position === 'left' ? 'rounded-none rounded-l-lg border' : '',
+		position === 'center' ? 'rounded-none border-t border-b border-r' : '',
+		position === 'right' ? 'rounded-none rounded-r-md  border-r border-y' : ''
+	)}
+	color={$selected === value ? (light ? 'gray' : 'dark') : 'light'}
+	variant="contained"
+>
+	<slot />
+</Button>

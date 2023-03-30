@@ -1,0 +1,12 @@
+{
+  "name": "windmill-monorepo",
+  "workspaces": [
+    "frontend",
+    "components"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w windmill",
+    "generate-backend-client": "npm run generate-backend-client --workspaces --if-present"
+  },
+  "type": "module"
+}
