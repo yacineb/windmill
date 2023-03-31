@@ -264,7 +264,7 @@ const onSuccessClick = {
 	}
 } as const
 
-export const components = {
+export const componentInputcomponents = {
 	displaycomponent: {
 		name: 'Rich Result',
 		icon: Monitor,
@@ -1557,10 +1557,7 @@ Hello \${ctx.username}
 					fieldType: 'array',
 					type: 'static',
 					subFieldType: 'object',
-					fileUpload: {
-						accept: 'application/json',
-						convertTo: 'text'
-					},
+
 					value: [
 						{
 							lon: 12.496366,

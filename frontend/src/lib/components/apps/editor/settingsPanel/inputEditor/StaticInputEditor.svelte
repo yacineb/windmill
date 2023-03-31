@@ -35,7 +35,7 @@
 	{:else if fieldType === 'date'}
 		<input on:keydown|stopPropagation type="date" bind:value={componentInput.value} />
 	{:else if fieldType === 'boolean'}
-		<Toggle bind:checked={componentInput.value} />
+		<Toggle bind:checked={componentInput.value} size="xs" />
 	{:else if fieldType === 'select' && selectOptions}
 		<select on:keydown|stopPropagation on:keydown|stopPropagation bind:value={componentInput.value}>
 			{#each selectOptions ?? [] as option}

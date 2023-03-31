@@ -250,14 +250,17 @@
 									>
 										<div
 											class={classNames(
-												'relative mx-auto w-full h-full overflow-auto',
+												'relative mx-auto w-full h-full overflow-auto bg-gray-300',
 												app.fullscreen ? '' : 'max-w-6xl'
 											)}
 										>
 											{#if $appStore.grid}
 												<ComponentNavigation />
 
-												<div on:pointerdown|stopPropagation class={twMerge(width, 'mx-auto')}>
+												<div
+													on:pointerdown|stopPropagation
+													class={twMerge(width, 'mx-auto h-full bg-gray-100')}
+												>
 													<GridEditor {policy} />
 												</div>
 

@@ -222,9 +222,9 @@
 				/>
 			</PanelSection>
 		{:else}
-			<div class="h-full w-full font-bold text-gray-400 text-lg py-10 px-4"
-				>{ccomponents[component.type].name} has no configuration</div
-			>
+			<div class="h-full w-full font-bold text-gray-400 text-lg py-10 px-4">
+				{ccomponents[component.type].name} has no configuration
+			</div>
 		{/if}
 
 		{#if componentSettings.item.data.type === 'tabscomponent'}

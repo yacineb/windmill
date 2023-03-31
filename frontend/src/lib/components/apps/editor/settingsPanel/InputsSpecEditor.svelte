@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, ToggleButton, ToggleButtonGroup } from '$lib/components/common'
+	import { Badge, Button, ToggleButton, ToggleButtonGroup } from '$lib/components/common'
 	import { addWhitespaceBeforeCapitals, capitalize } from '$lib/utils'
 	import { faArrowRight, faPen, faUpload, faUser } from '@fortawesome/free-solid-svg-icons'
 	import { fieldTypeToTsType } from '../../utils'
@@ -40,108 +40,105 @@
 			value: undefined
 		}
 	}
+
+	import { onMount } from 'svelte'
+	import { ChevronDown, PenTool, User, Upload, ArrowRight, Pen } from 'lucide-svelte'
+	let isOpen = false
+	let selected = componentInput.type
+
+	let items = [
+		{ value: 'static', label: 'Static', icon: Pen },
+		{ value: 'user', label: 'User Input', icon: User },
+		{ value: 'upload', label: 'Upload', icon: Upload },
+		{ value: 'connected', label: 'Connect', icon: ArrowRight }
+	]
+
+	function handleClick(item) {
+		selected = item.value
+		isOpen = false
+	}
+
+	onMount(() => {
+		const handleClickOutside = (e) => {
+			if (!e.target.closest('.dropdown')) {
+				isOpen = false
+			}
+		}
+		document.addEventListener('click', handleClickOutside)
+		return () => document.removeEventListener('click', handleClickOutside)
+	})
 </script>
 
 {#if !(resourceOnly && (fieldType !== 'object' || !format?.startsWith('resource-')))}
-	<div class="flex flex-col gap-1">
-		<div class="flex justify-between items-end gap-1">
-			<span class="text-sm font-semibold truncate">
-				{shouldCapitalize ? capitalize(addWhitespaceBeforeCapitals(key)) : key}
-				{#if tooltip}
-					<Tooltip>
-						{tooltip}
-					</Tooltip>
-				{/if}
-			</span>
-
+	<div class="flex flex-row justify-between gap-1 w-full items-center">
+		<div class="flex justify-between items-end gap-1 w-32">
 			<div class="flex gap-x-2 gap-y-1 flex-wrap justify-end items-center">
-				<Badge color="blue">
-					{fieldType === 'array' && subFieldType
-						? `${capitalize(fieldTypeToTsType(subFieldType))}[]`
-						: capitalize(fieldTypeToTsType(fieldType))}
-				</Badge>
-
-				{#if !onlyStatic && componentInput?.type && componentInput.type != 'eval'}
-					<ToggleButtonGroup
-						bind:selected={componentInput.type}
-						on:selected={(e) => {
-							if (e.detail == 'connected' && !componentInput['connection']) {
-								$connectingInput = {
-									opened: true,
-									input: undefined,
-									hoveredComponent: undefined
-								}
-							}
-						}}
-					>
-						<Popover placement="bottom" notClickable disapperTimoout={0}>
-							<ToggleButton
-								position="left"
-								value="static"
-								startIcon={{ icon: faPen }}
-								size="xs"
-								iconOnly
-							/>
-							<svelte:fragment slot="text">Static</svelte:fragment>
-						</Popover>
-						{#if userInputEnabled && !format?.startsWith('resource-')}
-							<Popover placement="bottom" notClickable disapperTimoout={0}>
-								<ToggleButton
-									position="center"
-									value="user"
-									startIcon={{ icon: faUser }}
-									size="xs"
-									iconOnly
-								/>
-								<svelte:fragment slot="text">User Input</svelte:fragment>
-							</Popover>
-						{/if}
-						{#if fileUpload}
-							<Popover placement="bottom" notClickable disapperTimoout={0}>
-								<ToggleButton
-									position="center"
-									value="upload"
-									startIcon={{ icon: faUpload }}
-									size="xs"
-									iconOnly
-								/>
-								<svelte:fragment slot="text">Upload</svelte:fragment>
-							</Popover>
-						{/if}
-						<Popover placement="bottom" notClickable disapperTimoout={0}>
-							<ToggleButton
-								position="right"
-								value="connected"
-								startIcon={{ icon: faArrowRight }}
-								size="xs"
-								iconOnly
-							/>
-							<svelte:fragment slot="text">Connect</svelte:fragment>
-						</Popover>
-					</ToggleButtonGroup>
-				{/if}
+				<span class="text-xs font-normal truncate text-gray-600">
+					{shouldCapitalize ? capitalize(addWhitespaceBeforeCapitals(key)) : key}
+					{#if tooltip}
+						<Tooltip>
+							{tooltip}
+						</Tooltip>
+					{/if}
+				</span>
 			</div>
 		</div>
 
-		{#if componentInput?.type === 'connected'}
-			<ConnectedInputEditor bind:componentInput />
-		{:else if componentInput?.type === 'row'}
-			<RowInputEditor bind:componentInput />
-		{:else if componentInput?.type === 'static'}
-			<StaticInputEditor
-				{fieldType}
-				{subFieldType}
-				{selectOptions}
-				{format}
-				{placeholder}
-				bind:componentInput
-			/>
-		{:else if componentInput?.type === 'eval'}
-			<EvalInputEditor {hasRows} {id} bind:componentInput />
-		{:else if componentInput?.type === 'upload'}
-			<UploadInputEditor bind:componentInput />
-		{:else if componentInput?.type === 'user'}
-			<span class="text-2xs italic text-gray-600">Field's value is set by the user</span>
+		<div class="w-full">
+			{#if componentInput?.type === 'connected'}
+				<ConnectedInputEditor bind:componentInput />
+			{:else if componentInput?.type === 'row'}
+				<RowInputEditor bind:componentInput />
+			{:else if componentInput?.type === 'static'}
+				<StaticInputEditor
+					{fieldType}
+					{subFieldType}
+					{selectOptions}
+					{format}
+					{placeholder}
+					bind:componentInput
+				/>
+			{:else if componentInput?.type === 'eval'}
+				<EvalInputEditor {hasRows} {id} bind:componentInput />
+			{:else if componentInput?.type === 'upload'}
+				<UploadInputEditor bind:componentInput />
+			{:else if componentInput?.type === 'user'}
+				<span class="text-2xs italic text-gray-600">Field's value is set by the user</span>
+			{/if}
+		</div>
+
+		{#if !onlyStatic && componentInput?.type && componentInput.type != 'eval'}
+			<div class="relative dropdown">
+				<Button size="xs" btnClasses="!h-8" color="dark" on:click={() => (isOpen = !isOpen)}>
+					<div class="relative" />
+					{#if items.find((item) => item.value === selected)}
+						<svelte:component
+							this={items.find((item) => item.value === selected)?.icon ?? PenTool}
+							class="w-4 h-4"
+						/>
+						<div class="absolute bottom-0.5 right-1">
+							<ChevronDown class="w-3 h-3" />
+						</div>
+					{/if}
+				</Button>
+				{#if isOpen}
+					<div class="absolute mt-1 w-full rounded-md bg-white shadow-lg z-10">
+						<ul class="py-1 rounded-md text-gray-700">
+							{#each items as item (item.value)}
+								<li>
+									<button
+										class="block w-full text-left px-4 py-2 hover:bg-gray-100"
+										on:click={() => handleClick(item)}
+									>
+										<svelte:component this={item.icon} class="w-4 h-4 inline" />
+										{item.label}
+									</button>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 {/if}
