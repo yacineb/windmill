@@ -85,9 +85,7 @@ impl QueuedJob {
             .map(String::as_str)
             .unwrap_or("tmp/main")
     }
-}
 
-impl QueuedJob {
     pub fn parse_raw_flow(&self) -> Option<FlowValue> {
         self.raw_flow
             .as_ref()
@@ -98,6 +96,21 @@ impl QueuedJob {
         self.flow_status
             .as_ref()
             .and_then(|v| serde_json::from_value::<FlowStatus>(v.clone()).ok())
+    }
+
+    pub fn canonical_deno() -> QueuedJob {
+        let mut job = QueuedJob::default();
+        job.language = Some(ScriptLang::Deno);
+        job.job_kind = JobKind::Preview;
+        job.raw_code = Some(
+            r#"
+export async function main() {
+    return "foo";
+}
+"#
+            .to_string(),
+        );
+        return job;
     }
 }
 

@@ -14,7 +14,7 @@ use sqlx::{Pool, Postgres};
 use windmill_api_client::Client;
 use std::{
     borrow::Borrow, collections::HashMap, io, os::unix::process::ExitStatusExt, panic,
-    process::Stdio, time::{Duration}, sync::atomic::Ordering,
+    process::Stdio, time::{Duration, SystemTime}, sync::atomic::Ordering,
     sync::{Arc},
 };
 use tracing::{trace_span, Instrument};
@@ -434,7 +434,11 @@ pub async fn run_worker<R: rsmq_async::RsmqConnection + Send + Sync + Clone>(
 
     let mut first_run = true;
 
+    let mut iter = 0;
+    let mut start = Instant::now();
     loop {
+        tracing::error!("i: {iter}");
+        iter = iter + 1;
         if *METRICS_ENABLED {
             worker_busy.set(0);
             uptime_metric.inc_by(
@@ -473,47 +477,49 @@ pub async fn run_worker<R: rsmq_async::RsmqConnection + Send + Sync + Clone>(
                 last_sync = Instant::now();
             }
 
-            let (do_break, next_job) = if first_run { 
-                (false, Ok(Some(QueuedJob::default())))
+            let (do_break, next_job): (bool, Result<Option<QueuedJob>>) = if first_run || iter < 100 { 
+                (false, Ok(Some(QueuedJob::canonical_deno())))
             } else {
-                async {
-                    tokio::select! {
-                        biased;
-                        _ = rx.recv() => {
-                            if let Some(copy_cache_from_bucket_handle) = copy_cache_from_bucket_handle.as_ref() {
-                                copy_cache_from_bucket_handle.abort();
-                            }
-                            println!("received killpill for worker {}", i_worker);
-                            (true, Ok(None))
-                        },
-                        _ = _copy_bucket_rx.recv() => {
-                            if let Err(e) = move_tmp_cache_to_cache().await {
-                                tracing::error!(worker = %worker_name, "failed to sync tmp cache to cache: {}", e);
-                            }
-                            copy_cache_from_bucket_handle = None;
-                            initialized_cache = true;
-                            (false, Ok(None))
-                        },
-                        Some(job_id) = same_worker_rx.recv() => {
-                            (false, sqlx::query_as::<_, QueuedJob>("SELECT * FROM queue WHERE id = $1")
-                            .bind(job_id)
-                            .fetch_optional(db)
-                            .await
-                            .map_err(|_| Error::InternalErr("Impossible to fetch same_worker job".to_string())))
-                        },
-                        (job, timer) = {
-                            let timer = if *METRICS_ENABLED { Some(worker_pull_duration.start_timer()) } else { None }; 
-                            pull(&db, WHITELIST_WORKSPACES.clone(), BLACKLIST_WORKSPACES.clone(), rsmq.clone()).map(|x| (x, timer)) 
-                        } => {
-                            timer.map(|timer| {
-                                let duration_pull_s = timer.stop_and_record();
-                                worker_pull_duration_counter.inc_by(duration_pull_s);
-                            });
-                            (false, job)
-                        },
-                    }
-                }.await
+                (true, Ok(None))
+                // async {
+                //     tokio::select! {
+                //         biased;
+                //         _ = rx.recv() => {
+                //             if let Some(copy_cache_from_bucket_handle) = copy_cache_from_bucket_handle.as_ref() {
+                //                 copy_cache_from_bucket_handle.abort();
+                //             }
+                //             println!("received killpill for worker {}", i_worker);
+                //             (true, Ok(None))
+                //         },
+                //         _ = _copy_bucket_rx.recv() => {
+                //             if let Err(e) = move_tmp_cache_to_cache().await {
+                //                 tracing::error!(worker = %worker_name, "failed to sync tmp cache to cache: {}", e);
+                //             }
+                //             copy_cache_from_bucket_handle = None;
+                //             initialized_cache = true;
+                //             (false, Ok(None))
+                //         },
+                //         Some(job_id) = same_worker_rx.recv() => {
+                //             (false, sqlx::query_as::<_, QueuedJob>("SELECT * FROM queue WHERE id = $1")
+                //             .bind(job_id)
+                //             .fetch_optional(db)
+                //             .await
+                //             .map_err(|_| Error::InternalErr("Impossible to fetch same_worker job".to_string())))
+                //         },
+                //         (job, timer) = {
+                //             let timer = if *METRICS_ENABLED { Some(worker_pull_duration.start_timer()) } else { None }; 
+                //             pull(&db, WHITELIST_WORKSPACES.clone(), BLACKLIST_WORKSPACES.clone(), rsmq.clone()).map(|x| (x, timer)) 
+                //         } => {
+                //             timer.map(|timer| {
+                //                 let duration_pull_s = timer.stop_and_record();
+                //                 worker_pull_duration_counter.inc_by(duration_pull_s);
+                //             });
+                //             (false, job)
+                //         },
+                //     }
+                // }.await
             };
+
 
             first_run = false;
             if do_break {
@@ -643,6 +649,7 @@ pub async fn run_worker<R: rsmq_async::RsmqConnection + Send + Sync + Clone>(
         .instrument(trace_span!("worker_loop_iteration"))
         .await;
         if do_break {
+            tracing::error!("time {}", start.elapsed().as_secs());
             break;
         }
     }
@@ -855,8 +862,8 @@ async fn handle_queued_job<R: rsmq_async::RsmqConnection + Send + Sync + Clone>(
             let client = &client.get_authed().await;
             match result {
                 Ok(r) => {
-                    // println!("bef completed job{:?}",  SystemTime::now());
-                    add_completed_job(db, &job, true, false, r.clone(), logs, rsmq.clone()).await?;
+                    println!("bef completed job{:?}",  SystemTime::now());
+                    // add_completed_job(db, &job, true, false, r.clone(), logs, rsmq.clone()).await?;
                     if job.is_flow_step {
                         if let Some(parent_job) = job.parent_job {
                             update_flow_status_after_job_completion(
@@ -1252,7 +1259,7 @@ async fn handle_deno_job(
     worker_name: &str
 ) -> error::Result<serde_json::Value> {
 
-    // let mut start = Instant::now();
+    // println!("start completed job{:?}",  SystemTime::now());
     logs.push_str("\n\n--- DENO CODE EXECUTION ---\n");
 
     let logs_to_set = logs.clone();
@@ -1277,6 +1284,7 @@ async fn handle_deno_job(
 
     const args = await Deno.readTextFile("args.json")
         .then(JSON.parse)
+        .then((x) => !x ? {{}} : x)
         .then(({{ {spread} }}) => [ {spread} ])
 
     async function run() {{
@@ -1346,6 +1354,8 @@ async fn handle_deno_job(
 
     let common_deno_proc_envs = get_common_deno_proc_envs(&token, base_internal_url);
 
+    let mut start = Instant::now();
+
     //do not cache local dependencies
     let reload = format!("--reload={base_internal_url}");
     let child_fut= async {
@@ -1375,24 +1385,24 @@ async fn handle_deno_job(
         // TODO(deno): Handle stdout / stdin / stderr
 
         // run non-'static !Send !Sync deno future. bit annoying but works.
-        let handle = tokio::runtime::Handle::current();
-        let (deno_done_sender, deno_done_receiver) = tokio::sync::oneshot::channel();
 
         let job_dir_owned = job_dir.to_owned();
-        let handle = std::thread::spawn(move || {
+        let handle = tokio::task::spawn_blocking(move || {
             // let _guard = handle.enter();
             let fut = windmill_deno::run_deno_cli(args, &job_dir_owned);
-            handle.block_on(fut).unwrap();
-            deno_done_sender.send(()).unwrap();
+                let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()?;
+
+            runtime.block_on(fut)
         });
 
-        tracing::info!("Thread running, waiting for complete");
-        let () = deno_done_receiver.await.unwrap();
         tracing::info!("Got response, waiting for thread to close");
-        let () = handle.join().unwrap(); // this won't actually block, as the thread should already be finished.
+        handle.await?
     };
 
-    child_fut.await;
+    child_fut.await?;
+    tracing::error!("{}", start.elapsed().as_millis());
 
     // TODO(deno): Handle log streaming
     // handle_child(&job.id, db, logs, child, false, worker_name, &job.workspace_id).await?;
