@@ -42,6 +42,7 @@ dotenv.workspace = true
 windmill-common = { workspace = true, features = ["tracing_init"] }
 windmill-api.workspace = true
 windmill-api-client.workspace = true
+windmill-deno.workspace = true
 windmill-worker.workspace = true
 futures.workspace = true
 tracing.workspace = true

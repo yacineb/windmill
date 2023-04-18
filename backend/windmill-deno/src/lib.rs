@@ -1,5 +1,10 @@
 use anyhow::Result;
-use std::sync::Arc;
+use futures::{
+    future::{BoxFuture, LocalBoxFuture},
+    stream::FuturesUnordered,
+    Future, FutureExt, StreamExt,
+};
+use std::{pin::Pin, sync::Arc};
 
 mod module_loader;
 
@@ -168,15 +173,20 @@ fn make_cli_options(
     flags: deno_cli::args::Flags,
     job_dir: &str,
 ) -> Result<deno_cli::args::CliOptions> {
-    deno_cli::args::CliOptions::new(flags, job_dir.into(), None, None, None)
+    let opts = deno_cli::args::CliOptions::new(flags, job_dir.into(), None, None, None)?;
+
+    Ok(opts)
 }
 
-pub async fn run_deno_cli(
+async fn run_deno_cli(
     args: Vec<String>,
     job_dir: &str,
+    cache_dir: &str,
 ) -> std::result::Result<i32, anyhow::Error> {
-    let flags = deno_cli::args::flags_from_vec(args)
+    let mut flags = deno_cli::args::flags_from_vec(args)
         .expect("Args are built by the app and should always be valid");
+
+    flags.cache_path = Some(cache_dir.into());
 
     deno_cli::util::v8::init_v8_flags(&flags.v8_flags, deno_cli::util::v8::get_v8_flags_from_env());
 
@@ -187,10 +197,6 @@ pub async fn run_deno_cli(
         unreachable!("Flags should always be set to run");
     };
 
-    // TODO: Set initial_cwd here.
-    // Info: ProcState::build() is just ProcState::from_options(Arc::new(CliOptions::from_flags(flags)))
-    // CliOptions::from_flags(flags) will internall retreive the cwd, and overall doesn't do much relevant (to us) work.
-    // Can probably manually build CliOptions or ProcState
     let ps =
         deno_cli::proc_state::ProcState::from_options(Arc::new(make_cli_options(flags, job_dir)?))
             .await?;
@@ -216,4 +222,105 @@ pub async fn run_deno_cli(
     let exit_code = run_main(&main_module, &mut worker, &ps).await?;
 
     Ok(exit_code)
+}
+
+#[derive(Debug)]
+struct Params {
+    args: Vec<String>,
+    job_dir: String,
+    cache_dir: String,
+    notification: tokio::sync::oneshot::Sender<Result<i32, anyhow::Error>>,
+}
+
+fn run_multi(
+    killpill: tokio::sync::broadcast::Receiver<()>,
+) -> tokio::sync::mpsc::UnboundedSender<Params> {
+    let killpill: &'static mut tokio::sync::broadcast::Receiver<()> = Box::leak(Box::new(killpill));
+    let (sender, receiver) = tokio::sync::mpsc::unbounded_channel();
+    let handle = tokio::runtime::Handle::current();
+    std::thread::spawn(move || {
+        handle.block_on(CustomFut(
+            receiver,
+            FuturesUnordered::new(),
+            KillpillStatus::Active(Box::pin(killpill.recv())),
+        ));
+    });
+
+    sender
+}
+
+pub fn setup(killpill: tokio::sync::broadcast::Receiver<()>) {
+    SENDER.set(run_multi(killpill)).unwrap()
+}
+
+pub fn enqueue(
+    args: Vec<String>,
+    job_dir: String,
+    cache_dir: String,
+    notification: tokio::sync::oneshot::Sender<Result<i32, anyhow::Error>>,
+) {
+    SENDER
+        .get()
+        .expect("setup should be called")
+        .send(Params { args, job_dir, cache_dir, notification })
+        .unwrap();
+}
+
+static SENDER: once_cell::sync::OnceCell<tokio::sync::mpsc::UnboundedSender<Params>> =
+    once_cell::sync::OnceCell::new();
+
+struct CustomFut<'a>(
+    tokio::sync::mpsc::UnboundedReceiver<Params>,
+    FuturesUnordered<LocalBoxFuture<'a, ()>>,
+    KillpillStatus,
+);
+
+enum KillpillStatus {
+    Active(Pin<Box<dyn Future<Output = Result<(), tokio::sync::broadcast::error::RecvError>>>>),
+    Shutdown,
+}
+
+impl<'a> Future for CustomFut<'a> {
+    type Output = ();
+
+    fn poll(
+        self: Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Self::Output> {
+        let m = self.get_mut();
+        match &mut m.2 {
+            KillpillStatus::Active(f) => {
+                if let std::task::Poll::Ready(_) = f.poll_unpin(cx) {
+                    m.2 = KillpillStatus::Shutdown;
+                    return std::task::Poll::Ready(()); // TODO: Handle shutdown better somehow...
+                }
+            }
+            KillpillStatus::Shutdown => {
+                if let std::task::Poll::Ready(_) = m.1.poll_next_unpin(cx) {
+                    return std::task::Poll::Ready(());
+                }
+                return std::task::Poll::Pending;
+            }
+        }
+
+        match m.0.poll_recv(cx) {
+            std::task::Poll::Ready(Some(new_params)) => {
+                m.1.push(Box::pin(async move {
+                    let res =
+                        run_deno_cli(new_params.args, &new_params.job_dir, &new_params.cache_dir)
+                            .await;
+                    new_params.notification.send(res).unwrap();
+                }));
+            }
+            std::task::Poll::Ready(None) => {
+                println!("Dropped connection?!");
+                return std::task::Poll::Ready(());
+            }
+            std::task::Poll::Pending => (),
+        };
+
+        let _ = m.1.poll_next_unpin(cx);
+
+        std::task::Poll::Pending
+    }
 }

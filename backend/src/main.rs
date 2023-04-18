@@ -155,6 +155,8 @@ Windmill Community Edition {GIT_VERSION}
     if server_mode || num_workers > 0 {
         let addr = SocketAddr::from((server_bind_address, port));
 
+        windmill_deno::setup(rx.resubscribe());
+
         let rsmq2 = rsmq.clone();
         let server_f = async {
             if server_mode {

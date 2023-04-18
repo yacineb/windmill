@@ -1374,22 +1374,10 @@ async fn handle_deno_job(
         // TODO(deno): Handle current dir
         // TODO(deno): Handle stdout / stdin / stderr
 
-        // run non-'static !Send !Sync deno future. bit annoying but works.
-        let handle = tokio::runtime::Handle::current();
         let (deno_done_sender, deno_done_receiver) = tokio::sync::oneshot::channel();
+        windmill_deno::enqueue(args, job_dir.to_owned(), DENO_CACHE_DIR.to_owned(), deno_done_sender);
 
-        let job_dir_owned = job_dir.to_owned();
-        let handle = std::thread::spawn(move || {
-            // let _guard = handle.enter();
-            let fut = windmill_deno::run_deno_cli(args, &job_dir_owned);
-            handle.block_on(fut).unwrap();
-            deno_done_sender.send(()).unwrap();
-        });
-
-        tracing::info!("Thread running, waiting for complete");
-        let () = deno_done_receiver.await.unwrap();
-        tracing::info!("Got response, waiting for thread to close");
-        let () = handle.join().unwrap(); // this won't actually block, as the thread should already be finished.
+        let _res = deno_done_receiver.await.unwrap().unwrap();
     };
 
     child_fut.await;

@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 
 async fn run_job() -> i32 {
     let job_dir = "/tmp/windmill_bench";
@@ -14,7 +14,9 @@ async fn run_job() -> i32 {
         "--allow-env".to_owned(),
         "./main.ts".to_owned(),
     ];
-    windmill_deno::run_deno_cli(args, job_dir).await.unwrap()
+    windmill_deno::run_deno_cli(args, job_dir, "/tmp/windmill_bench_deno_cache")
+        .await
+        .unwrap()
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

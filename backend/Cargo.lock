@@ -8044,6 +8044,7 @@ dependencies = [
  "windmill-api",
  "windmill-api-client",
  "windmill-common",
+ "windmill-deno",
  "windmill-queue",
  "windmill-worker",
 ]
@@ -8172,6 +8173,8 @@ dependencies = [
  "deno_lockfile",
  "deno_runtime",
  "futures",
+ "lazy_static",
+ "once_cell",
  "tokio",
  "tracing-log",
 ]

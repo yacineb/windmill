@@ -12,10 +12,7 @@ tokio = ["dep:tokio"]
 axum = ["dep:axum", "dep:tracing"]
 reqwest = ["dep:reqwest"]
 prometheus = ["dep:prometheus"]
-tracing_init = [
-    "dep:tracing",
-    "dep:tracing-subscriber",
-]
+tracing_init = ["dep:tracing", "dep:tracing-subscriber"]
 
 
 [lib]
