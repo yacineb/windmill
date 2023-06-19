@@ -427,11 +427,11 @@
 
 {#if !$enterpriseLicense}
 	<Alert type="error" title="Enterprise license required"
-		>Deploy to staging/prod from the web UI is only available with an enterprise license</Alert
+		>Deploy to staging/prod from the web UI is only available with an enterprise license.</Alert
 	>
 {:else if notSet == true}
 	<Alert type="error" title="Staging/Prod deploy not set up"
-		>As an admin, go to "Workspace {'->'} Dev/Staging/Prod"</Alert
+		>As an admin, go to "Workspace" tab {'->'} "Dev/Staging/Prod"</Alert
 	>
 {:else}
 	<Alert type="info" title="Shareable page"

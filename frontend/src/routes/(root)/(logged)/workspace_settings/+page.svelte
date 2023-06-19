@@ -469,18 +469,19 @@
 		{:else if tab == 'deploy_to'}
 			<div class="my-2"
 				><Alert type="info" title="Link this workspace to another Staging/Prod workspace"
-					>Linking this workspace to another staging/prod workspace unlock the Web-based flow to
+					>Linking this workspace to another staging or prod workspace unlocks the Web-based flow to
 					deploy to another workspace.</Alert
 				></div
 			>
 			{#if $enterpriseLicense}
 				<DeployToSetting bind:workspaceToDeployTo />
 			{:else}
-				<div class="my-2"
-					><Alert type="error" title="Enterprise license required"
-						>Deploy to staging/prod from the web UI is only available with an enterprise license</Alert
-					></div
-				>
+			<div class="my-2">
+				<Alert type="error" title="Enterprise license required">
+					Deploy to staging/prod from the web UI is only available with an 
+					<a href="https://docs.windmill.dev/docs/misc/upgrade#enterprise-edition" class="text-red-800">enterprise license</a>.
+				</Alert>
+			</div>			
 			{/if}
 		{:else if tab == 'premium'}
 			{#if isCloudHosted()}
