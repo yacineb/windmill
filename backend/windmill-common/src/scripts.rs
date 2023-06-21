@@ -29,6 +29,9 @@ pub enum ScriptLang {
     Python3,
     Go,
     Bash,
+    Http,
+    Postgresql,
+    Mock,
 }
 
 impl ScriptLang {
@@ -38,6 +41,9 @@ impl ScriptLang {
             ScriptLang::Python3 => "python3",
             ScriptLang::Go => "go",
             ScriptLang::Bash => "bash",
+            ScriptLang::Http => "http",
+            ScriptLang::Postgresql => "postgresql",
+            ScriptLang::Mock => "mock",
         }
     }
 }
