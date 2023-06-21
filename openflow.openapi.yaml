@@ -182,6 +182,9 @@ components:
             - python3
             - go
             - bash
+            - mock
+            - http
+            - postgresql
         path:
           type: string
         lock:
