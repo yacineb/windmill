@@ -4,13 +4,11 @@
 	import RunnableWrapper from '../helpers/RunnableWrapper.svelte'
 	import type { AppInput } from '../../inputType'
 	import type { AppViewerContext, ComponentCustomCSS, RichConfigurations } from '../../types'
-	import { initCss } from '../../utils'
+	import { concatCustomCss } from '../../utils'
 	import { getContext } from 'svelte'
 	import { initConfig, initOutput } from '../../editor/appUtils'
 	import { components } from '../../editor/component'
 	import ResolveConfig from '../helpers/ResolveConfig.svelte'
-	import { twMerge } from 'tailwind-merge'
-	import ResolveStyle from '../helpers/ResolveStyle.svelte'
 
 	export let id: string
 	export let componentInput: AppInput | undefined
@@ -41,7 +39,7 @@
 		...(resolvedConfig.options ?? {})
 	} as ChartOptions
 
-	let css = initCss($app.css?.chartjscomponent, customCss)
+	$: css = concatCustomCss($app.css?.piechartcomponent, customCss)
 </script>
 
 {#each Object.keys(components['chartjscomponent'].initialData.configuration) as key (key)}
@@ -53,26 +51,11 @@
 	/>
 {/each}
 
-{#each Object.keys(css ?? {}) as key (key)}
-	<ResolveStyle
-		{id}
-		{customCss}
-		{key}
-		bind:css={css[key]}
-		componentStyle={$app.css?.chartjscomponent}
-	/>
-{/each}
-
 <RunnableWrapper {outputs} {render} autoRefresh {componentInput} {id} bind:initializing bind:result>
-	<div
-		class={twMerge('w-full h-full', css?.container?.class, 'wm-chartjs')}
-		style={css?.container?.style ?? ''}
-	>
+	<div class="w-full h-full {css?.container?.class ?? ''}" style={css?.container?.style ?? ''}>
 		{#if result && resolvedConfig.type}
-			{#key resolvedConfig.type}
-				{#key options}
-					<Chart type={resolvedConfig.type} data={result} {options} />
-				{/key}
+			{#key options}
+				<Chart type={resolvedConfig.type} data={result} {options} />
 			{/key}
 		{/if}
 	</div>
