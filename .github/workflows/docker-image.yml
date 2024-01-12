@@ -58,11 +58,6 @@ jobs:
           build-args: |
             features=enterprise,enterprise_saml,stripe
             nsjail=true
-          tags: |
-            ${{ steps.meta-ee-public.outputs.tags }}
-          labels: |
-            ${{ steps.meta-ee-public.outputs.labels }}
-            org.opencontainers.image.licenses=Windmill-Enterprise-License
 
   # disabled until we make it 100% reliable and add more meaningful tests
   # playwright:
