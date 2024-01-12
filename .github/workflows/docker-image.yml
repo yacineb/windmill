@@ -6,8 +6,6 @@ env:
 name: Build windmill:main
 on:
   push:
-    branches: [main]
-    tags: ["*"]
 
 concurrency:
   group: ${{ github.ref }}
