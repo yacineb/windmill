@@ -22,6 +22,9 @@ if (!bo.success) {
   const dependencies: Record<string, string[]> = {};
   for (const i of imports) {
     let [_, name, version] = i.path.match(captureVersion) ?? [];
+    if (name == undefined || name.startsWith("node:")) {
+      continue;
+    }
     let splitted = name.split("/");
     if (splitted.length > 2) {
       name = splitted.slice(0, 2).join("/");

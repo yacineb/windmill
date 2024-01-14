@@ -16,7 +16,7 @@ use crate::{
         read_result, set_logs, start_child_process, write_file, write_file_binary,
     },
     AuthedClientBackgroundTask, BUNFIG_INSTALL_SCOPES, BUN_CACHE_DIR, BUN_PATH, DISABLE_NSJAIL,
-    DISABLE_NUSER, HOME_ENV, NPM_CONFIG_REGISTRY, NSJAIL_PATH, PATH_ENV, TZ_ENV,
+    DISABLE_NUSER, HOME_ENV, NODE_PATH, NPM_CONFIG_REGISTRY, NSJAIL_PATH, PATH_ENV, TZ_ENV,
 };
 
 use tokio::{
@@ -402,21 +402,20 @@ import {{ main }} from "./main.ts";
 
 const fs = require('fs/promises');
 
-const args = await fs.readFile('args.json', {{ encoding: 'utf8' }}).then(JSON.parse)
-    .then(({{ {spread} }}) => [ {spread} ])
 
 BigInt.prototype.toJSON = function () {{
     return this.toString();
 }};
 
 {dates}
-async function run() {{
+async function run(args) {{
     let res: any = await main(...args);
     const res_json = JSON.stringify(res ?? null, (key, value) => typeof value === 'undefined' ? null : value);
     await fs.writeFile("result.json", res_json);
     process.exit(0);
 }}
-run().catch(async (e) => {{
+fs.readFile('args.json', {{ encoding: 'utf8' }}).then(JSON.parse)
+    .then(({{ {spread} }}) => [ {spread} ]).then((args) => run(args)).catch(async (e) => {{
     let err = {{ message: e.message, name: e.name, stack: e.stack }};
     let step_id = process.env.WM_FLOW_STEP_ID;
     if (step_id) {{
@@ -513,15 +512,8 @@ plugin(p)
         start_child_process(nsjail_cmd, NSJAIL_PATH.as_str()).await?
     } else {
         let script_path = format!("{job_dir}/wrapper.ts");
-        let args = vec![
-            "run",
-            "-i",
-            "--prefer-offline",
-            "-r",
-            "./loader.bun.ts",
-            &script_path,
-        ];
-        let mut bun_cmd = Command::new(&*BUN_PATH);
+        let args = vec!["--swc", &script_path];
+        let mut bun_cmd = Command::new(&*NODE_PATH);
         bun_cmd
             .current_dir(job_dir)
             .env_clear()
