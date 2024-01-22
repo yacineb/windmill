@@ -110,7 +110,7 @@
 								label: 'End',
 								next: []
 							},
-							canDelete: false,
+							canDelete: nodes?.length > 1,
 							isTail: true,
 							label: 'End'
 						},
@@ -187,7 +187,7 @@
 				break
 			case 'nodeInsert': {
 				addSubGrid()
-
+				console.log('n', branchInsert, parentIds)
 				if (branchInsert) {
 					if (parentIds.length === 1) {
 						nodes = insertNode(nodes, parentIds[0], graphNode)
@@ -200,6 +200,7 @@
 						if (!parentWithMultipleNext) {
 							return nodes
 						}
+						console.log('inserting node', graphNode, nodes, parentWithMultipleNext)
 
 						nodes = insertNode(nodes, parentWithMultipleNext.id, graphNode)
 					}
@@ -256,7 +257,7 @@
 								component: DecisionTreeGraphHeader,
 								props: {
 									node: graphNode,
-									canDelete: true,
+									canDelete: nodes?.length > 1,
 									label:
 										collapseNode === graphNode.id ? 'Default branch' : `Branch ${branchCount++}`
 								},
@@ -280,8 +281,7 @@
 								component: DecisionTreeGraphNode,
 								props: {
 									node: graphNode,
-									canDelete:
-										graphNode.next.length === 1 && getParents(nodes, graphNode.id).length === 1,
+									canDelete: nodes?.length > 1,
 									canAddBranch: !cannotAddBranch,
 									index
 								},
@@ -338,7 +338,7 @@
 								component: DecisionTreeGraphNode,
 								props: {
 									node: graphNode,
-									canDelete: !cannotAddBranch,
+									canDelete: nodes?.length > 1,
 									canAddBranch: !cannotAddBranch,
 									index
 								},

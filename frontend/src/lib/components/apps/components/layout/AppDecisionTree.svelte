@@ -10,6 +10,7 @@
 	import type { DecisionTreeNode } from '../../editor/component'
 	import Button from '$lib/components/common/button/Button.svelte'
 	import { ArrowLeft, ArrowRight } from 'lucide-svelte'
+	import { initOutput } from '../../editor/appUtils'
 
 	export let id: string
 	export let componentContainerHeight: number
@@ -17,12 +18,16 @@
 	export let render: boolean
 	export let nodes: DecisionTreeNode[]
 
-	const { app, focusedGrid, selectedComponent, connectingInput, componentControl } =
+	const { app, focusedGrid, selectedComponent, connectingInput, componentControl, worldStore } =
 		getContext<AppViewerContext>('AppViewerContext')
 
 	let css = initCss($app.css?.conditionalwrapper, customCss)
 	let selectedConditionIndex = 0
-	let currentNodeId = nodes[0].id
+	let currentNodeId = nodes[0]?.id ?? 'a'
+
+	let outputs = initOutput($worldStore, id, {
+		selectedTab: 0
+	})
 
 	$: resolvedConditions = nodes.reduce((acc, node) => {
 		acc[node.id] = acc[node.id] || []
@@ -35,7 +40,7 @@
 	}, resolvedNext || {})
 
 	$: if (!nodes.map((n) => n.id).includes(currentNodeId)) {
-		currentNodeId = nodes[0].id
+		currentNodeId = nodes[0]?.id ?? 'a'
 	}
 
 	$: lastNodeId = nodes?.find((node) => node.next.length === 0)?.id
@@ -60,7 +65,7 @@
 				history.push(node.id)
 
 				selectedConditionIndex = index + 1
-
+				outputs.selectedTab.set(selectedConditionIndex)
 				$focusedGrid = {
 					parentComponentId: id,
 					subGridIndex: nodes.findIndex((node) => node.id == currentNodeId)
@@ -76,6 +81,7 @@
 			currentNodeId = previsouNodeId
 
 			selectedConditionIndex = nodes.findIndex((next) => next.id == currentNodeId)
+			outputs.selectedTab.set(selectedConditionIndex)
 
 			$focusedGrid = {
 				parentComponentId: id,
@@ -86,6 +92,7 @@
 
 	function onFocus(newIndex: number) {
 		selectedConditionIndex = newIndex
+		outputs.selectedTab.set(selectedConditionIndex)
 		currentNodeId = nodes[selectedConditionIndex].id
 		$focusedGrid = {
 			parentComponentId: id,
@@ -169,7 +176,7 @@
 </div>
 
 <div class="h-8 flex flex-row gap-2 justify-end items-center px-2 bg-surface-primary z-50">
-	{#if nodes[0].id !== currentNodeId}
+	{#if (nodes[0]?.id ?? 'a') !== currentNodeId}
 		<Button on:click={prev} size="xs2" color="light" startIcon={{ icon: ArrowLeft }}>Prev</Button>
 	{/if}
 	<Button
