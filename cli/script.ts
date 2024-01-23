@@ -607,17 +607,9 @@ const command = new Command()
     "generate-metadata",
     "re-generate the metadata file updating the lock and the script schema"
   )
-  .arguments("<path_to_script_file:string>")
-  .option("--lock-only", "re-generate only the lock")
-  .option("--schema-only", "re-generate only script schema")
-  .action(generateMetadata as any)
-  .command(
-    "update-all-locks",
-    "re-generate the metadata file updating the lock and the script schema"
-  )
-  .arguments("<path_to_script_file:string>")
-  .option("--lock-only", "re-generate only the lock")
-  .option("--schema-only", "re-generate only script schema")
+  .arguments("[script_file:file]")
+  .option("--lock-only", "re-generate only the lock(s)")
+  .option("--schema-only", "re-generate only script schema(s)")
   .action(generateMetadata as any);
 
 export default command;
