@@ -21,7 +21,7 @@
 
 	type ScheduleW = ScheduleWJobs & { canWrite: boolean }
 
-	let schedules: ScheduleW[] = []
+	let schedules: ScheduleW[] | undefined = undefined
 	let shareModal: ShareModal
 	let loading = true
 	let loadingSchedulesWithJobStats = true
@@ -127,7 +127,7 @@
 		<div class="w-12/12 pb-4 pt-6">
 			<input type="text" placeholder="Search schedule" bind:value={filter} class="search-item" />
 		</div>
-		{#if loading}
+		{#if loading || schedules == undefined}
 			{#each new Array(6) as _}
 				<Skeleton layout={[[6], 0.4]} />
 			{/each}

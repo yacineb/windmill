@@ -174,7 +174,7 @@
 		)
 	}
 
-	$: isTableDisplay = isArrayWithObjects(result)
+	// $: isTableDisplay = isArrayWithObjects(result)
 	let richRender: boolean = true
 
 	type InputObject = { [key: string]: number[] }
@@ -401,7 +401,7 @@
 				<Markdown md={result?.md ?? result?.markdown} />
 			</div>
 		{:else if !forceJson && isTableDisplay && richRender}
-			<AutoDataTable objects={result} />
+			<!-- <AutoDataTable objects={result} /> -->
 		{:else if largeObject}
 			{#if typeof result == 'object' && 'filename' in result && 'file' in result}
 				<div
