@@ -174,7 +174,7 @@
 		)
 	}
 
-	// $: isTableDisplay = isArrayWithObjects(result)
+	$: isTableDisplay = isArrayWithObjects(result)
 	let richRender: boolean = true
 
 	type InputObject = { [key: string]: number[] }
