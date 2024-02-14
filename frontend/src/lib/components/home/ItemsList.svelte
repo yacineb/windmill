@@ -36,6 +36,7 @@
 	import DrawerContent from '../common/drawer/DrawerContent.svelte'
 	import Item from './Item.svelte'
 	import TreeViewRoot from './TreeViewRoot.svelte'
+	import { goto } from '$app/navigation'
 
 	type TableItem<T, U extends 'script' | 'flow' | 'app' | 'raw_app'> = T & {
 		canWrite: boolean
@@ -314,7 +315,11 @@
 	</DrawerContent>
 </Drawer>
 
-<ContentSearch bind:this={contentSearch} />
+<ContentSearch
+	on:editScript={(e) => goto(`/scripts/edit/${e.detail}?no_draft=true`)}
+	on:editFlow={(e) => goto(`/flows/edit/${e.detail}?no_draft=true`)}
+	bind:this={contentSearch}
+/>
 <CenteredPage>
 	<div class="flex flex-wrap gap-2 items-center justify-between w-full mt-2">
 		<div class="flex justify-start">

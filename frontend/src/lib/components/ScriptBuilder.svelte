@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { DraftService, NewScript, Script, ScriptService, type NewScriptWithDraft } from '$lib/gen'
-	import { goto } from '$app/navigation'
 	import { page } from '$app/stores'
 	import { inferArgs } from '$lib/infer'
 	import { initialCode } from '$lib/script_helpers'
@@ -51,6 +50,7 @@
 	import type Editor from './Editor.svelte'
 	import WorkerTagPicker from './WorkerTagPicker.svelte'
 	import MetadataGen from './copilot/MetadataGen.svelte'
+	import type { BeforeNavigate } from '@sveltejs/kit'
 
 	export let script: NewScript
 	export let initialPath: string = ''
@@ -60,6 +60,9 @@
 	export let showMeta: boolean = false
 	export let diffDrawer: DiffDrawer | undefined = undefined
 	export let savedScript: NewScriptWithDraft | undefined = undefined
+
+	export let gotoUrl: ((url: URL) => void) | undefined
+	export let beforeNavigate: BeforeNavigate | undefined
 
 	let metadataOpen =
 		showMeta ||
@@ -370,7 +373,13 @@
 </script>
 
 <svelte:window on:keydown={onKeyDown} />
-<UnsavedConfirmationModal {diffDrawer} savedValue={savedScript} modifiedValue={script} />
+<UnsavedConfirmationModal
+	gotoUrl={goto}
+	{beforeNavigate}
+	{diffDrawer}
+	savedValue={savedScript}
+	modifiedValue={script}
+/>
 
 {#if !$userStore?.operator}
 	<Drawer placement="right" bind:open={metadataOpen} size="800px">

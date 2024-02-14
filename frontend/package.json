@@ -117,6 +117,7 @@
 		"lodash": "^4.17.21",
 		"lucide-svelte": "^0.293.0",
 		"monaco-editor": "npm:@codingame/monaco-editor-treemended@>=1.83.5 <1.84.0",
+		"monaco-editor-workers": "0.44.0",
 		"monaco-graphql": "^1.5.1",
 		"monaco-languageclient": "~7.0.1",
 		"openai": "^4.3.0",

@@ -69,7 +69,7 @@
 	import type DiffDrawer from './DiffDrawer.svelte'
 	import UnsavedConfirmationModal from './common/confirmationModal/UnsavedConfirmationModal.svelte'
 	import { cloneDeep } from 'lodash'
-	import { goto } from '$app/navigation'
+	import { beforeNavigate, goto } from '$app/navigation'
 
 	export let initialPath: string = ''
 	export let newFlow: boolean
@@ -188,10 +188,8 @@
 				draft?: Flow
 			}
 
-			if (newFlow) {
+			if (newFlow || (savedFlow?.draft_only && $pathStore !== initialPath)) {
 				dispatch('saveInitial', $pathStore)
-			} else if (savedFlow?.draft_only && $pathStore !== initialPath) {
-				goto(`/flows/edit/${$pathStore}?selected=${getSelectedId()}`)
 			}
 			sendUserToast('Saved as draft')
 		} catch (error) {
@@ -970,6 +968,8 @@
 <svelte:window on:keydown={onKeyDown} />
 
 <UnsavedConfirmationModal
+	gotoUrl={goto}
+	{beforeNavigate}
 	{diffDrawer}
 	savedValue={savedFlow}
 	modifiedValue={{

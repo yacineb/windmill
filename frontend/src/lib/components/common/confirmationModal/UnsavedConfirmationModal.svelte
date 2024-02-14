@@ -1,20 +1,23 @@
 <script lang="ts">
 	import ConfirmationModal from './ConfirmationModal.svelte'
-	import { beforeNavigate, goto } from '$app/navigation'
 	import Button from '../button/Button.svelte'
 	import type DiffDrawer from '$lib/components/DiffDrawer.svelte'
 	import { cleanValueProperties, orderedJsonStringify, type Value } from '$lib/utils'
 	import { tick } from 'svelte'
+	import type { BeforeNavigate } from './model'
 
 	export let savedValue: Value | undefined = undefined
 	export let modifiedValue: Value | undefined = undefined
 	export let diffDrawer: DiffDrawer | undefined = undefined
 
+	export let gotoUrl: ((url: URL) => void) | undefined
+	export let beforeNavigate: BeforeNavigate | undefined
+
 	let bypassBeforeNavigate = false
 	let open = false
 	let goingTo: URL | undefined = undefined
 
-	beforeNavigate(async (newNavigationState) => {
+	beforeNavigate?.(async (newNavigationState) => {
 		if (
 			!bypassBeforeNavigate &&
 			newNavigationState.to &&
@@ -28,7 +31,10 @@
 				const current = cleanValueProperties(modifiedValue)
 				if (orderedJsonStringify(draftOrDeployed) === orderedJsonStringify(current)) {
 					bypassBeforeNavigate = true
-					goto(goingTo)
+					if (!gotoUrl) {
+						console.error('gotoUrl is not defined')
+					}
+					gotoUrl?.(goingTo)
 				} else {
 					open = true
 				}
@@ -51,7 +57,10 @@
 	on:confirmed={() => {
 		if (goingTo) {
 			bypassBeforeNavigate = true
-			goto(goingTo)
+			if (!gotoUrl) {
+				console.error('gotoUrl is not defined')
+			}
+			gotoUrl?.(goingTo)
 		}
 	}}
 >
@@ -80,7 +89,7 @@
 							onClick: () => {
 								if (goingTo) {
 									bypassBeforeNavigate = true
-									goto(goingTo)
+									gotoUrl(goingTo)
 								}
 							}
 						}

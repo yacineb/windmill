@@ -27,6 +27,7 @@
 	import Tooltip from './Tooltip.svelte'
 	import { Eye, Folder, Plus, SearchCode, User } from 'lucide-svelte'
 	import ContentSearch from './ContentSearch.svelte'
+	import { goto } from '$app/navigation'
 
 	type PathKind = 'resource' | 'script' | 'variable' | 'flow' | 'schedule' | 'app' | 'raw_app'
 	let meta: Meta | undefined = undefined
@@ -267,7 +268,11 @@
 </script>
 
 {#if kind != 'app' && kind != 'schedule' && initialPath != '' && initialPath != undefined}
-	<ContentSearch bind:this={contentSearch} />
+	<ContentSearch
+		on:editScript={(e) => goto(`/scripts/edit/${e.detail}?no_draft=true`)}
+		on:editFlow={(e) => goto(`/flows/edit/${e.detail}?no_draft=true`)}
+		bind:this={contentSearch}
+	/>
 {/if}
 
 <Drawer bind:this={newFolder}>

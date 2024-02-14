@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation'
+	import { beforeNavigate, goto } from '$app/navigation'
 	import { page } from '$app/stores'
 	import {
 		Alert,
@@ -691,6 +691,8 @@
 <TestJobLoader bind:this={testJobLoader} bind:isLoading={testIsLoading} bind:job />
 
 <UnsavedConfirmationModal
+	gotoUrl={goto}
+	{beforeNavigate}
 	{diffDrawer}
 	savedValue={savedApp}
 	modifiedValue={{

@@ -10,8 +10,8 @@
 	import ToggleButton from './common/toggleButton-v2/ToggleButton.svelte'
 	import FlowIcon from './home/FlowIcon.svelte'
 	import { Alert, Button } from './common'
-	import { goto } from '$app/navigation'
 	import YAML from 'yaml'
+	import { createEventDispatcher } from 'svelte'
 
 	let search: string = ''
 
@@ -87,6 +87,8 @@
 					flows: getCounts(filteredFlowItems.length),
 					scripts: getCounts(filteredScriptItems.length)
 			  }
+
+	const dispatch = createEventDispatcher()
 </script>
 
 <SearchItems
@@ -277,7 +279,7 @@
 													<div class="flex gap-2">
 														<Button
 															on:click|once={() => {
-																goto(`/scripts/edit/${item.path}?no_draft=true`)
+																dispatch('editScript', item.path)
 															}}
 															color="light"
 															size="sm"
@@ -317,7 +319,7 @@
 													<div class="flex gap-2">
 														<Button
 															on:click|once={() => {
-																goto(`/flows/edit/${item.path}?no_draft=true`)
+																dispatch('editFlow', item.path)
 															}}
 															color="light"
 															size="sm"
