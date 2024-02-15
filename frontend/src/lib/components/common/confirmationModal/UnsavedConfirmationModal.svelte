@@ -89,7 +89,7 @@
 							onClick: () => {
 								if (goingTo) {
 									bypassBeforeNavigate = true
-									gotoUrl(goingTo)
+									gotoUrl?.(goingTo)
 								}
 							}
 						}

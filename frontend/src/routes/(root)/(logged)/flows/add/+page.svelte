@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { goto } from '$app/navigation'
+	import { beforeNavigate, goto } from '$app/navigation'
 	import { page } from '$app/stores'
 
 	import FlowBuilder from '$lib/components/FlowBuilder.svelte'
@@ -119,6 +119,8 @@
 <!-- <div id="monaco-widgets-root" class="monaco-editor" style="z-index: 1200;" /> -->
 
 <FlowBuilder
+	gotoUrl={goto}
+	{beforeNavigate}
 	on:saveInitial={(e) => {
 		goto(`/flows/edit/${e.detail}?selected=${getSelectedId?.()}`)
 	}}

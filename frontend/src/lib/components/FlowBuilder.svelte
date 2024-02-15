@@ -69,7 +69,7 @@
 	import type DiffDrawer from './DiffDrawer.svelte'
 	import UnsavedConfirmationModal from './common/confirmationModal/UnsavedConfirmationModal.svelte'
 	import { cloneDeep } from 'lodash'
-	import { beforeNavigate, goto } from '$app/navigation'
+	import type { BeforeNavigate } from './common/confirmationModal/model'
 
 	export let initialPath: string = ''
 	export let newFlow: boolean
@@ -84,6 +84,8 @@
 		  })
 		| undefined = undefined
 	export let diffDrawer: DiffDrawer | undefined = undefined
+	export let gotoUrl: ((url: URL) => void) | undefined
+	export let beforeNavigate: BeforeNavigate | undefined
 
 	const dispatch = createEventDispatcher()
 
@@ -968,7 +970,7 @@
 <svelte:window on:keydown={onKeyDown} />
 
 <UnsavedConfirmationModal
-	gotoUrl={goto}
+	{gotoUrl}
 	{beforeNavigate}
 	{diffDrawer}
 	savedValue={savedFlow}

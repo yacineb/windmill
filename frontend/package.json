@@ -1,6 +1,6 @@
 {
 	"name": "windmill-components",
-	"version": "1.269.0",
+	"version": "1.269.4",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -141,7 +141,7 @@
 		"yjs": "^13.6.7"
 	},
 	"peerDependencies": {
-		"@sveltejs/kit": "^1.25.0",
+		"@sveltejs/kit": "^2.0.0",
 		"svelte": "^4.0.0"
 	},
 	"exports": {

@@ -50,7 +50,7 @@
 	import type Editor from './Editor.svelte'
 	import WorkerTagPicker from './WorkerTagPicker.svelte'
 	import MetadataGen from './copilot/MetadataGen.svelte'
-	import type { BeforeNavigate } from '@sveltejs/kit'
+	import { beforeNavigate, goto } from '$app/navigation'
 
 	export let script: NewScript
 	export let initialPath: string = ''
@@ -60,9 +60,6 @@
 	export let showMeta: boolean = false
 	export let diffDrawer: DiffDrawer | undefined = undefined
 	export let savedScript: NewScriptWithDraft | undefined = undefined
-
-	export let gotoUrl: ((url: URL) => void) | undefined
-	export let beforeNavigate: BeforeNavigate | undefined
 
 	let metadataOpen =
 		showMeta ||

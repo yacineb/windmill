@@ -12,7 +12,7 @@
 		orderedJsonStringify
 	} from '$lib/utils'
 	import { initFlow } from '$lib/components/flows/flowStore'
-	import { goto } from '$app/navigation'
+	import { beforeNavigate, goto } from '$app/navigation'
 	import { writable } from 'svelte/store'
 	import type { FlowState } from '$lib/components/flows/flowState'
 	import { sendUserToast } from '$lib/toast'
@@ -193,6 +193,8 @@
 
 <DiffDrawer bind:this={diffDrawer} {restoreDeployed} {restoreDraft} />
 <FlowBuilder
+	gotoUrl={goto}
+	{beforeNavigate}
 	on:deploy={(e) => {
 		goto(`/flows/get/${e.detail}?workspace=${$workspaceStore}`)
 	}}
