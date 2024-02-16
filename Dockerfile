@@ -205,7 +205,7 @@ RUN mkdir -p /tmp/gobuildwarm && cd /tmp/gobuildwarm && go mod init gobuildwarm 
 
 ENV TZ=Etc/UTC
 
-RUN /usr/local/bin/python3 -m pip install pip-tools
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 
 COPY --from=builder /frontend/build /static_frontend
 COPY --from=builder /windmill/target/release/windmill ${APP}/windmill
