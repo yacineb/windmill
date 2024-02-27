@@ -70,6 +70,7 @@ pub async fn update_flow_status_after_job_completion<
     rsmq: Option<R>,
     worker_name: &str,
     job_completed_tx: Sender<SendResult>,
+    last_ping: Option<chrono::DateTime<chrono::Utc>>,
 ) -> error::Result<()> {
     // this is manual tailrecursion because async_recursion blows up the stack
     // todo!();
@@ -91,6 +92,7 @@ pub async fn update_flow_status_after_job_completion<
         rsmq.clone(),
         worker_name,
         job_completed_tx.clone(),
+        last_ping,
     )
     .await?;
     while let Some(nrec) = rec {
@@ -111,6 +113,7 @@ pub async fn update_flow_status_after_job_completion<
             rsmq.clone(),
             worker_name,
             job_completed_tx.clone(),
+            None
         )
         .await
         {
@@ -132,6 +135,7 @@ pub async fn update_flow_status_after_job_completion<
                     rsmq.clone(),
                     worker_name,
                     job_completed_tx.clone(),
+                    None,
                 )
                 .await?
             }
@@ -175,6 +179,7 @@ pub async fn update_flow_status_after_job_completion_internal<
     rsmq: Option<R>,
     worker_name: &str,
     job_completed_tx: Sender<SendResult>,
+    last_ping: Option<chrono::DateTime<chrono::Utc>>,
 ) -> error::Result<Option<RecUpdateFlowStatusAfterJobCompletion>> {
     let (
         should_continue_flow,

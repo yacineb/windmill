@@ -1220,6 +1220,7 @@ pub async fn run_worker<R: rsmq_async::RsmqConnection + Send + Sync + Clone + 's
                         rsmq2.clone(),
                         &worker_name2,
                         job_completed_sender.clone(),
+                        None,
                     )
                     .await
                     {
@@ -2256,7 +2257,7 @@ pub async fn process_completed_job<R: rsmq_async::RsmqConnection + Send + Sync +
         let timer = _worker_save_completed_job_duration
             .as_ref()
             .map(|x| x.start_timer());
-        add_completed_job(
+        let (_, last_ping) = add_completed_job(
             db,
             &job,
             true,
@@ -2293,6 +2294,7 @@ pub async fn process_completed_job<R: rsmq_async::RsmqConnection + Send + Sync +
                     rsmq.clone(),
                     worker_name,
                     job_completed_tx,
+                    last_ping
                 )
                 .await?;
                 #[cfg(feature = "prometheus")]
@@ -2330,6 +2332,7 @@ pub async fn process_completed_job<R: rsmq_async::RsmqConnection + Send + Sync +
                     rsmq,
                     worker_name,
                     job_completed_tx,
+                    last_ping
                 )
                 .await?;
             }

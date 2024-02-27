@@ -361,7 +361,7 @@ pub async fn add_completed_job_error<R: rsmq_async::RsmqConnection + Clone + Sen
     e: serde_json::Value,
     rsmq: Option<R>,
     _worker_name: &str,
-) -> Result<WrappedError, Error> {
+) -> Result<(WrappedError, Option<chrono::DateTime<chrono::Utc>>), Error> {
     #[cfg(feature = "prometheus")]
     register_metric(
         &WORKER_EXECUTION_FAILED,
@@ -387,7 +387,7 @@ pub async fn add_completed_job_error<R: rsmq_async::RsmqConnection + Clone + Sen
         queued_job.id,
         serde_json::to_string(&result).unwrap_or_else(|_| "".to_string())
     );
-    let _ = add_completed_job(
+    let (_, last_ping) = add_completed_job(
         db,
         &queued_job,
         false,
@@ -399,7 +399,7 @@ pub async fn add_completed_job_error<R: rsmq_async::RsmqConnection + Clone + Sen
         rsmq,
     )
     .await?;
-    Ok(result)
+    Ok((result, last_ping))
 }
 
 fn flatten_jobs(modules: Vec<FlowStatusModule>) -> Vec<Uuid> {
@@ -438,7 +438,7 @@ pub async fn add_completed_job<
     mem_peak: i32,
     canceled_by: Option<CanceledBy>,
     rsmq: Option<R>,
-) -> Result<Uuid, Error> {
+) -> Result<(Uuid, Option<chrono::DateTime<chrono::Utc>>), Error> {
     // tracing::error!("Start");
     // let start = tokio::time::Instant::now();
 
@@ -564,18 +564,20 @@ pub async fn add_completed_job<
     tx = delete_job(tx, &queued_job.workspace_id, job_id).await?;
     // tracing::error!("3 {:?}", start.elapsed());
 
+    let mut last_ping = None;
     if queued_job.is_flow_step
     {
         if let Some(parent_job) = queued_job.parent_job  {
             // persist the flow last progress timestamp to avoid zombie flow jobs
             tracing::debug!("Persisting flow last progress timestamp to flow job: {:?}", parent_job);
-            sqlx::query!(
-                "UPDATE queue SET last_ping = now() WHERE id = $1 AND workspace_id = $2",
+            last_ping = sqlx::query_scalar!(
+                "UPDATE queue SET last_ping = now() WHERE id = $1 AND workspace_id = $2 RETURNING last_ping",
                 parent_job,
                 &queued_job.workspace_id
             )
-            .execute(&mut tx)
-            .await?;
+            .fetch_optional(&mut tx)
+            .await?
+            .flatten();
         }
 
     }
@@ -774,7 +776,7 @@ pub async fn add_completed_job<
     }
     // tracing::error!("4 {:?}", start.elapsed());
 
-    Ok(queued_job.id)
+    Ok((queued_job.id, last_ping))
 }
 
 pub async fn run_error_handler<
