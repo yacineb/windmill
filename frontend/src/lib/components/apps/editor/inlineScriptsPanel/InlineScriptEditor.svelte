@@ -101,6 +101,16 @@
 					value: componentOutputs.currentStepIndex.peak(),
 					fieldType: 'number'
 				}
+
+				newFields['lastAction'] = {
+					type: 'connected',
+					connection: {
+						componentId: id,
+						path: 'lastAction'
+					},
+					value: componentOutputs.lastAction.peak(),
+					fieldType: 'string'
+				}
 			}
 		}
 	}

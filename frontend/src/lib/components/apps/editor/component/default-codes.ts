@@ -85,12 +85,13 @@ export async function main(db: Postgresql) {
 }`
 	},
 	steppercomponent: {
-		deno: `export async function main(stepIndex: number) {
+		deno: `export async function main(stepIndex: number, lastAction: string) {
         // if (stepIndex == 0) {
         //     if (page0Invalid) throw Error("first step invalid")
         // } else if ...
+        // lastAction is the last action that was performed and can be one of those following values: "next", "previous", "done"
 }`,
-		python3: `def main(stepIndex: int):
+		python3: `def main(stepIndex: int, lastAction: str):
 # if stepIndex == 0:
 #     if page0Invalid:
 #         raise Exception("first step invalid")

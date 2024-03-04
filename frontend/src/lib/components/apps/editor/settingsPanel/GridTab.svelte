@@ -155,7 +155,7 @@
 
 <PanelSection title={`${word}s ${tabs && tabs.length > 0 ? `(${tabs.length})` : ''}`}>
 	{#if !tabs || tabs.length == 0}
-		<span class="text-xs text-tertiary">No Tabs</span>
+		<span class="text-xs text-tertiary">No {word.toLocaleLowerCase()}s</span>
 	{/if}
 	<div class="w-full flex gap-2 flex-col mt-2">
 		<section
@@ -177,8 +177,8 @@
 							type="text"
 							bind:value={items[index].value}
 						/>
-						<div class="absolute right-6">
-							<CloseButton noBg on:close={() => deleteSubgrid(index)} />
+						<div class="absolute right-7">
+							<CloseButton small noBg on:close={() => deleteSubgrid(index)} />
 						</div>
 
 						<!-- svelte-ignore a11y-no-noninteractive-tabindex -->

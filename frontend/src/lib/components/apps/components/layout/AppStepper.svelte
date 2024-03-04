@@ -45,7 +45,7 @@
 		currentStepIndex: 0,
 		result: undefined,
 		loading: false,
-		lastAction: undefined as 'previous' | 'next' | undefined
+		lastAction: undefined as 'previous' | 'next' | 'done' | undefined
 	})
 
 	async function handleTabSelection() {
@@ -72,7 +72,9 @@
 	async function runStep(targetIndex: number) {
 		statusByStep[selectedIndex] = 'pending'
 
-		outputs?.lastAction.set(directionClicked === 'left' ? 'previous' : 'next')
+		outputs?.lastAction.set(
+			targetIndex === tabs.length ? 'done' : directionClicked === 'left' ? 'previous' : 'next'
+		)
 
 		if (runnableComponent && !debugMode) {
 			await runnableComponent?.runComponent()
@@ -222,7 +224,7 @@
 						size="xs"
 						color="dark"
 						variant="contained"
-						disabled={lastStep}
+						disabled={lastStep && !Boolean(runnableComponent)}
 						on:click={(e) => {
 							e.preventDefault()
 							directionClicked = 'right'
@@ -230,7 +232,7 @@
 						}}
 					>
 						<div class="flex flex-row gap-2">
-							Next
+							{lastStep && Boolean(runnableComponent) ? 'Finish' : 'Next'}
 							{#if statusByStep[selectedIndex] === 'pending' && directionClicked === 'right'}
 								<Loader2 class="w-4 h-4 animate-spin" />
 							{:else}
