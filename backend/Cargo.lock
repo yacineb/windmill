@@ -4620,6 +4620,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "object_store"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b8718f8b65fdf67a45108d1548347d4af7d71fb81ce727bbf9e3b2535e079db3"
+dependencies = [
+ "async-trait",
+ "base64 0.21.7",
+ "bytes",
+ "chrono",
+ "futures",
+ "humantime",
+ "hyper",
+ "itertools 0.12.1",
+ "md-5 0.10.6",
+ "parking_lot",
+ "percent-encoding",
+ "quick-xml 0.31.0",
+ "rand 0.8.5",
+ "reqwest",
+ "ring 0.17.8",
+ "serde",
+ "serde_json",
+ "snafu",
+ "tokio",
+ "tracing",
+ "url",
+ "walkdir",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5211,7 +5241,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb0520d68eaa9993ae0c741409d1526beff5b8f48e1d73e4381616f8152cf488"
 dependencies = [
  "arrow-format",
- "object_store",
+ "object_store 0.8.0",
  "regex",
  "simdutf8",
  "thiserror",
@@ -5236,7 +5266,7 @@ dependencies = [
  "memchr",
  "memmap2 0.7.1",
  "num-traits",
- "object_store",
+ "object_store 0.8.0",
  "once_cell",
  "percent-encoding",
  "polars-arrow",
@@ -6165,6 +6195,7 @@ dependencies = [
  "percent-encoding",
  "pin-project-lite",
  "rustls 0.21.10",
+ "rustls-native-certs",
  "rustls-pemfile",
  "serde",
  "serde_json",
@@ -9475,7 +9506,7 @@ dependencies = [
  "magic-crypt",
  "mail-send",
  "mime_guess",
- "object_store",
+ "object_store 0.9.1",
  "openidconnect",
  "pin-project",
  "polars",
@@ -9566,7 +9597,7 @@ dependencies = [
  "itertools 0.12.1",
  "lazy_static",
  "magic-crypt",
- "object_store",
+ "object_store 0.9.1",
  "prometheus",
  "rand 0.8.5",
  "regex",

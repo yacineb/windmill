@@ -227,7 +227,7 @@ pin-project = "1"
 
 polars = { version = "0.35.4", features = ["lazy", "parquet", "aws", "azure", "csv", "dtype-full", "serde", "strings", "extract_groups"] }
 polars-io = { version = "0.35.4", features = ["csv"] }
-object_store = { version = "0.8.0", features = ["aws", "azure"] }
+object_store = { version = "0.9.1", features = ["aws", "azure"] }
 openidconnect = { version = "3.4.0" }
 
 aws-config = "^1"
