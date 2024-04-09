@@ -207,7 +207,7 @@
 							index
 						} = styleStore.getProp(p)}
 						{#if prop !== undefined && index !== undefined}
-							<div class="pb-2 pt-1">
+							<div class="pb-2 pt-1 w-full">
 								<div class="text-xs font-semibold text-tertiary pb-0.5">
 									{formatKebabCase(prop.key)}
 								</div>
