@@ -58,17 +58,8 @@
 
 	const allIdsInPath = writable<string[]>([])
 
-	let ncontext: any = {
-		...context,
-		workspace,
-		mode: 'viewer',
-		summary: summary,
-		author: policy.on_behalf_of_email
-	}
-
 	function hashchange(e: HashChangeEvent) {
-		ncontext.hash = e.newURL.split('#')[1]
-		ncontext = ncontext
+		context.hash = e.newURL.split('#')[1]
 	}
 
 	function resizeWindow() {
@@ -85,7 +76,14 @@
 	let parentContext = getContext<AppViewerContext>('AppViewerContext')
 
 	setContext<AppViewerContext>('AppViewerContext', {
-		worldStore: buildWorld(ncontext),
+		worldStore: buildWorld({
+			...context,
+			workspace,
+			mode: 'viewer',
+			summary: summary,
+			author: policy.on_behalf_of_email,
+			hash: window.location.hash
+		}),
 		initialized: writable({ initialized: false, initializedComponents: [] }),
 		app: appStore,
 		summary: writable(summary),
